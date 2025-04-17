@@ -1,0 +1,167 @@
+﻿@model EduGate.Models.CourseLearnViewModel
+@{
+    ViewData["Title"] = Model.Course.Title;
+    var bgColor = "#023047";
+    var highlight = "#FFB703";
+    var btnColor = "#FCBF49";
+
+    var currentModule = Model.GetCurrentModule();
+    var currentContent = Model.GetNextIncompleteContent(currentModule);
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Course sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header" style="background-color: @bgColor; color: white;">
+                    <h5 class="mb-0">Course Content</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="progress m-2" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: @Model.GetOverallProgressPercentage()%; background-color: @highlight;"
+                             aria-valuenow="@Model.GetOverallProgressPercentage()" aria-valuemin="0" aria-valuemax="100">
+                            @Model.GetOverallProgressPercentage()%
+                        </div>
+                    </div>
+
+                    <div class="accordion" id="moduleAccordion">
+                        @foreach (var module in Model.Course.Modules.OrderBy(m => m.Order))
+                        {
+                            var moduleId = $"module{module.Id}";
+                            var headingId = $"heading{module.Id}";
+                            var collapseId = $"collapse{module.Id}";
+                            var isCurrentModule = module.Id == currentModule?.Id;
+                            var moduleProgress = Model.GetModuleProgressPercentage(module);
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="@headingId">
+                                    <button class="accordion-button @(isCurrentModule ? "" : "collapsed")" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#@collapseId"
+                                            aria-expanded="@(isCurrentModule ? "true" : "false")" aria-controls="@collapseId">
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between">
+                                                <span>@module.Title</span>
+                                                <span class="badge @(moduleProgress == 100 ? "bg-success" : "bg-primary")">@moduleProgress%</span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="@collapseId" class="accordion-collapse collapse @(isCurrentModule ? "show" : "")"
+                                     aria-labelledby="@headingId" data-bs-parent="#moduleAccordion">
+                                    <div class="accordion-body p-0">
+                                        <ul class="list-group list-group-flush">
+                                            @foreach (var content in module.Contents.OrderBy(c => c.Order))
+                                            {
+                                                var isCompleted = Model.StudentProgress.ContainsKey(content.Id) && Model.StudentProgress[content.Id];
+                                                var isCurrent = currentContent?.Id == content.Id;
+                                                var contentType = content.ContentType;
+                                                var contentTypeIcon = contentType == "Video" ? "bi-camera-video" :
+                                                contentType == "Quiz" ? "bi-question-circle" : "bi-file-text";
+
+                                                <li class="list-group-item @(isCurrent ? "active" : "")">
+                                                    <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id, moduleId = module.Id, contentId = content.Id })"
+                                                       class="d-flex justify-content-between align-items-center text-decoration-none @(isCurrent ? "text-white" : "text-dark")">
+                                                        <div>
+                                                            <i class="bi @contentTypeIcon me-2"></i>
+                                                            @content.Title
+                                                        </div>
+                                                        @if (isCompleted)
+                                                        {
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content area -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: @bgColor; color: white;">
+                    <h5 class="mb-0">@(currentContent?.Title ?? "Course Overview")</h5>
+                    <div>
+                        @if (currentContent != null)
+                        {
+                            <form method="post" asp-action="MarkContentComplete" asp-route-id="@Model.Course.Id" asp-route-contentId="@currentContent.Id">
+                                <button type="submit" class="btn btn-sm" style="background-color: @btnColor; color: @bgColor;">
+                                    Mark Complete
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (currentContent == null)
+                    {
+                        <div class="text-center py-5">
+                            <h3>Welcome to @Model.Course.Title</h3>
+                            <p>@Model.Course.Description</p>
+                            <p>Select a module from the left sidebar to begin learning.</p>
+                        </div>
+                    }
+                    else if (currentContent is VideoContent videoContent)
+                    {
+                        <div class="ratio ratio-16x9 mb-3">
+                            <video controls>
+                                <source src="@videoContent.VideoLocation" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <h4>@videoContent.Title</h4>
+                        <p>@videoContent.ShortDescription</p>
+                    }
+                    else if (currentContent is TextContent textContent)
+                    {
+                        <h4>@textContent.Title</h4>
+                        <div class="mt-3">
+                            @Html.Raw(textContent.Text)
+                        </div>
+                    }
+                    else if (currentContent is QuizContent quizContent)
+                    {
+                        <h4>@quizContent.Title</h4>
+                        <p>@quizContent.ShortDescription</p>
+
+                        <form method="post" asp-action="SubmitQuiz" asp-route-id="@Model.Course.Id" asp-route-quizId="@quizContent.Id">
+                            @for (int i = 0; i < quizContent.Questions.Count; i++)
+                            {
+                                var question = quizContent.Questions[i];
+                                <div class="card mb-3">
+                                    <div class="card-header">Question @(i + 1)</div>
+                                    <div class="card-body">
+                                        <p>@question.Question</p>
+
+                                        @for (int j = 0; j < question.Options.Count; j++)
+                                        {
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio"
+                                                       name="Answers[@i]" id="q@(i)o@(j)" value="@j" required>
+                                                <label class="form-check-label" for="q@(i)o@(j)">
+                                                    @question.Options[j]
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <button type="submit" class="btn mt-3" style="background-color: @btnColor; color: @bgColor;">
+                                Submit Quiz
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,86 @@
+﻿@model CourseSearchResultsViewModel
+@{
+    ViewData["Title"] = "Search";
+}
+
+<div class="container my-4">
+    <h1 class="mb-4">Search Results for "@Model.SearchQuery"</h1>
+
+    <p class="text-muted">Found @Model.TotalResults course@(Model.TotalResults != 1 ? "s" : "")</p>
+
+    @if (Model.Courses.Any())
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var course in Model.Courses)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@Url.Content("~/" + course.ImageUrl)" class="card-img-top" alt="@course.Title" style="height: 160px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">@course.Title</h5>
+                            <p class="card-text text-muted">@course.TeacherName</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-light text-dark">@course.Category</span>
+                                <div>
+                                    <i class="bi bi-eye"></i>
+                                    <span>@course.Views views</span>
+                                </div>
+                            </div>
+                            <p class="card-text">@(course.Description.Length > 100 ? $"{course.Description.Substring(0, 100)}..." : course.Description)</p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <a href="@Url.Action("Details", "Course", new { id = course.Id })" class="btn btn-sm w-100" style="background-color: #023047; color: #FFB703;">
+                                View Course
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav aria-label="Page navigation" class="my-4">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous button -->
+                    <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Search", "Course", new { query = Model.SearchQuery, page = Model.CurrentPage - 1 })" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+
+                    <!-- Page numbers -->
+                    @{
+                        const int maxPagesToShow = 5;
+                        int startPage = Math.Max(1, Model.CurrentPage - (maxPagesToShow / 2));
+                        int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+
+                        // Adjust start page if needed
+                        startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+
+                        for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Search", "Course", new { query = Model.SearchQuery, page = i })">@i</a>
+                            </li>
+                        }
+                    }
+
+                    <!-- Next button -->
+                    <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Search", "Course", new { query = Model.SearchQuery, page = Model.CurrentPage + 1 })" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <p class="mb-0">No courses found matching your search terms. Try different keywords or <a href="@Url.Action("Index", "Course")">browse all courses</a>.</p>
+        </div>
+    }
+</div>

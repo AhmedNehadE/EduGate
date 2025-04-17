@@ -1,0 +1,35 @@
+﻿@model EduGate.Models.Teacher
+@{
+    ViewData["Title"] = "Register as Teacher";
+}
+
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="text-center mb-4">Become a Teacher</h2>
+
+    <form asp-action="RegisterTeacher" method="post">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Full Name</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">Email</label>
+            <input asp-for="Email" class="form-control" type="email" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label">Password</label>
+            <input asp-for="Password" class="form-control" type="password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn w-100" style="background-color: #198754; color: white;">Register as Teacher</button>
+    </form>
+
+    <div class="mt-3 text-center">
+        <p>Just want to learn?</p>
+        <a asp-controller="Account" asp-action="Register" class="btn btn-outline-primary">Register as Student</a>
+    </div>
+</div>

@@ -1,0 +1,136 @@
+﻿@{
+    var userName = Context.Session.GetString("UserName");
+    var userType = Context.Session.GetString("UserType");
+    bool isLoggedIn = !string.IsNullOrEmpty(userName);
+}
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduGate</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/EduGate.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+       <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <div class="container-fluid">
+        <!-- Logo on left -->
+        <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+            <img src="~/img/the logo.png" alt="EduGate Logo" height="50" />
+        </a>
+
+                <form id="courseSearchForm" class="d-none d-md-flex mx-auto position-relative" style="width: 40%;">
+                    <div id="searchContainer" class="input-group w-100 position-relative">
+                        <input id="courseSearchInput" class="form-control" type="search" placeholder="Search courses..." aria-label="Search" autocomplete="off">
+                        <button class="btn" type="submit" style="background-color: #FCBF49; color: #003049;">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+
+                        <!-- Dropdown results container -->
+                        <div id="searchResults" class="dropdown-menu w-100 shadow-lg position-absolute" style="top: 100%; z-index: 1000; max-height: 400px; overflow-y: auto; display: none;">
+                            <!-- Results will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </form>
+
+
+                <!-- Mobile search form -->
+                <form id="mobileSearchForm" class="d-md-none d-flex my-2 w-100 position-relative">
+                    <div id="mobileSearchContainer" class="input-group position-relative">
+                        <input id="mobileSearchInput" class="form-control" type="search" placeholder="Search courses..." aria-label="Search" autocomplete="off">
+                        <button class="btn" type="submit" style="background-color: #FFB703; color: #023047;">
+                            <i class="bi bi-search"></i>
+                        </button>
+
+                        <!-- Mobile dropdown results container -->
+                        <div id="mobileSearchResults" class="dropdown-menu w-100 shadow-lg position-absolute" style="top: 100%; z-index: 1000; max-height: 300px; overflow-y: auto; display: none;">
+                            <!-- Results will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </form>
+
+
+        <!-- Hamburger menu for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+
+
+            <!-- Sign in/sign up or user dropdown -->
+                    <div class="collapse navbar-collapse justify-content-end">
+                        <!-- Mobile search -->
+                        <form class="d-md-none d-flex my-2 w-100">
+                            <div class="input-group">
+                                <input class="form-control" type="search" placeholder="Search courses..." aria-label="Search">
+                                <button class="btn" type="submit" style="background-color: #FFB703; color: #023047;">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Right-side nav buttons -->
+                        <div class="navbar-nav ms-auto d-flex align-items-center gap-2">
+                            <!--Become a teacher button-->
+                            <a class="btn me-2" style="background-color: #023047; color: #FFB703;" asp-area="" asp-controller="Account" asp-action="RegisterTeacher">
+                                Become a Teacher
+                            </a>
+
+                            @if (isLoggedIn)
+                            {
+                                <div class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-person-circle me-1"></i> @userName
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                        @if (userType == "Student")
+                                        {
+                                            <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Account")">My Courses</a></li>
+                                        }
+                                        else if (userType == "Teacher")
+                                        {
+                                            <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Account")">My Courses</a></li>
+                                            <li><a class="dropdown-item" href="@Url.Action("Create", "Course")">Create Course</a></li>
+                                        }
+                                        <li><a class="dropdown-item" href="@Url.Action("Profile", "Account")">Profile Settings</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Logout", "Account")">Sign Out</a></li>
+                                    </ul>
+                                </div>
+                            }
+                            else
+                            {
+                                <a class="btn" style="background-color: #FFB703; color: #023047;" href="@Url.Action("Login", "Account")">Sign In</a>
+                                <a class="btn" style="background-color: #023047; color: #FFB703;" href="@Url.Action("Register", "Account")">Sign Up</a>
+                            }
+                        </div>
+                    </div>
+        </div>
+    </div>
+</nav>
+
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - EduGate - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

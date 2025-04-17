@@ -1,0 +1,33 @@
+﻿@model EduGate.ViewComponents.UserInfoViewModel
+
+@if (Model.IsLoggedIn)
+{
+    <div class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1"></i> @Model.UserName
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+            @if (Model.UserType == "Student")
+            {
+                <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Student")">My Courses</a></li>
+            }
+            else if (Model.UserType == "Teacher")
+            {
+                <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Teacher")">My Courses</a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Create", "Course")">Create Course</a></li>
+            }
+            <li><a class="dropdown-item" href="@Url.Action("Profile", "Account")">Profile Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="@Url.Action("Logout", "Account")">Sign Out</a></li>
+        </ul>
+    </div>
+}
+else
+{
+    <div class="nav-item">
+        <a class="nav-link" href="@Url.Action("Login", "Account")">Sign In</a>
+    </div>
+    <div class="nav-item">
+        <a class="nav-link btn btn-primary text-white px-3" href="@Url.Action("Register", "Account")">Sign Up</a>
+    </div>
+}

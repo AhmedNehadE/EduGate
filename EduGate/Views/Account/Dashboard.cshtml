@@ -1,0 +1,137 @@
+﻿@model IAccount
+@{
+    ViewData["Title"] = "Dashboard";
+    var bgColor = "#023047";
+    var highlight = "#FFB703";
+    var btnColor = "#FCBF49";
+}
+<div class="container my-4">
+    <h2 style="color:@bgColor;">Dashboard</h2>
+
+    @if (Model is EduGate.Models.Teacher teacher)
+    {
+        <div class="alert alert-info mb-4">
+            <p>Total Courses: <strong>@teacher.UploadedCourses.Count</strong></p>
+            <p>Total Views: <strong>@teacher.UploadedCourses.Sum(c => c.Views)</strong></p>
+        </div>
+
+        <h3 style="color:@bgColor;">Your Courses</h3>
+
+        @if (teacher.UploadedCourses.Any())
+        {
+            <div class="row">
+                @foreach (var course in teacher.UploadedCourses)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            @if (!string.IsNullOrEmpty(course.ImageUrl))
+                            {
+                                <img src="@Url.Content("~/"+course.ImageUrl)" class="card-img-top" alt="@course.Title">
+                            }
+                            else
+                            {
+                                <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 160px;">
+                                    <span>No Image</span>
+                                </div>
+                            }
+                            <div class="card-body">
+                                <h5 class="card-title">@course.Title</h5>
+                                <p class="card-text">@(course.Description?.Length > 100 ? course.Description.Substring(0, 100) + "..." : course.Description)</p>
+                                <p class="card-text"><small class="text-muted">Views: @course.Views</small></p>
+                                <p class="card-text"><small class="text-muted">Modules: @course.Modules.Count</small></p>
+                            </div>
+                            <div class="card-footer bg-white border-0">
+                                <a href="@Url.Action("Details", "Course", new { id = course.Id })" class="btn w-100 mb-2" style="background-color:@btnColor; color:@bgColor;">View Course</a>
+                                <a href="@Url.Action("Edit", "Course", new { id = course.Id })" class="btn w-100 btn-outline-secondary">Edit Course</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="mt-4">
+                <a href="@Url.Action("Create", "Course")" class="btn" style="background-color:@btnColor; color:@bgColor;">Create New Course</a>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <p>You haven't created any courses yet.</p>
+            </div>
+            <div class="mt-3">
+                <a href="@Url.Action("Create", "Course")" class="btn" style="background-color:@btnColor; color:@bgColor;">Create Your First Course</a>
+            </div>
+        }
+    }
+    else if (Model is EduGate.Models.Student student)
+    {
+        <div class="alert alert-info mb-4">
+            <p>Enrolled Courses: <strong>@student.EnrolledCourses.Count</strong></p>
+            <p>Completed Courses: <strong>@student.EnrolledCourses.Count(ec => ec.IsCompleted)</strong></p>
+        </div>
+
+        <h3 style="color:@bgColor;">Your Enrolled Courses</h3>
+
+        @if (student.EnrolledCourses.Any())
+        {
+            <div class="row">
+                @foreach (var enrollment in student.EnrolledCourses)
+                {
+                    var course = enrollment.Course;
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            @if (!string.IsNullOrEmpty(course.ImageUrl))
+                            {
+                                <img src="@Url.Content("~/"+course.ImageUrl)" class="card-img-top" alt="@course.Title">
+                            }
+                            else
+                            {
+                                <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 160px;">
+                                    <span>No Image</span>
+                                </div>
+                            }
+                            <div class="card-body">
+                                <h5 class="card-title">@course.Title</h5>
+                                <p class="card-text">@(course.Description?.Length > 100 ? course.Description.Substring(0, 100) + "..." : course.Description)</p>
+
+                                @{
+                                    // Calculate progress
+                                    int totalContents = course.Modules.SelectMany(m => m.Contents).Count();
+                                    int completedContents = student.ContentProgresses
+                                    .Count(p => course.Modules.SelectMany(m => m.Contents).Any(c => c.Id == p.ContentId) && p.IsCompleted);
+                                    int progressPercentage = totalContents > 0 ? (completedContents * 100) / totalContents : 0;
+                                }
+
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" style="width: @progressPercentage%; background-color: @highlight;"
+                                         aria-valuenow="@progressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                        @progressPercentage%
+                                    </div>
+                                </div>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        @completedContents of @totalContents items completed
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="card-footer bg-white border-0">
+                                <a href="@Url.Action("Learn", "Course", new { id = course.Id })" class="btn w-100" style="background-color:@btnColor; color:@bgColor;">
+                                    @(enrollment.IsCompleted ? "Review Course" : "Continue Learning")
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <p>You haven't enrolled in any courses yet.</p>
+            </div>
+            <div class="mt-3">
+                <a href="@Url.Action("Index", "Course")" class="btn" style="background-color:@btnColor; color:@bgColor;">Browse Courses</a>
+            </div>
+        }
+    }
+</div>

@@ -1,0 +1,25 @@
+﻿@model IAccount
+@{
+    ViewData["Title"] = "Profile";
+    var bgColor = "#023047";
+    var btnColor = "#FCBF49";
+}
+
+<div class="container my-4">
+    <h2 style="color:@bgColor;">Account Profile</h2>
+    <form method="post" asp-action="UpdateProfile">
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="Email" value="@Model.Email" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Password</label>
+            <input type="password" name="Password" class="form-control" />
+        </div>
+        <button type="submit" class="btn" style="background-color:@btnColor; color:@bgColor;">Update</button>
+    </form>
+
+    <div class="mt-3">
+        <a href="/Account/Dashboard" class="btn btn-outline-dark">View Dashboard</a>
+    </div>
+</div>

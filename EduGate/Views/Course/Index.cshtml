@@ -1,0 +1,56 @@
+﻿@model List<EduGate.Models.Course>
+
+@{
+    ViewData["Title"] = "All Courses";
+}
+
+<div class="container py-5">
+    <h1 class="display-4 text-center mb-5">All Courses</h1>
+
+    <div class="row">
+        @if (Model.Any())
+        {
+            @foreach (var course in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <a href="@Url.Action("Details", "Course", new { id = course.Id })" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm course-card">
+                            <img src="@Url.Content(course.ImageUrl)"
+                                 class="card-img-top"
+                                 alt="@course.Title"
+                                 style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">@course.Title</h5>
+                                <p class="card-text text-muted mb-2">@course.Category</p>
+                                <p class="card-text">@Html.Raw(course.Description?.Length > 100 ? course.Description.Substring(0, 100) + "..." : course.Description)</p>
+                            </div>
+                            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-eye"></i> @course.Views views</span>
+                                <span class="badge bg-primary">@course.Category</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <h3>No courses available at the moment.</h3>
+                <p>Check back soon for new courses!</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .course-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+            cursor: pointer;
+        }
+</style>
