@@ -103,7 +103,7 @@ namespace EduGate.Migrations
                             Id = 1,
                             Category = "Programming",
                             Description = "Learn the fundamentals of C# programming, including syntax, OOP principles, and basic applications.",
-                            ImageUrl = "img/csharp.jpg",
+                            ImageUrl = "~/img/csharp.jpg",
                             TeacherId = 1,
                             Title = "Introduction to C#",
                             Views = 1500
@@ -113,7 +113,7 @@ namespace EduGate.Migrations
                             Id = 2,
                             Category = "Programming",
                             Description = "Deep dive into Python's advanced features like decorators, generators, and data analysis libraries.",
-                            ImageUrl = "img/python.png",
+                            ImageUrl = "~/img/python.png",
                             TeacherId = 1,
                             Title = "Advanced Python",
                             Views = 1200
@@ -123,7 +123,7 @@ namespace EduGate.Migrations
                             Id = 3,
                             Category = "Programming",
                             Description = "An entry-level course covering the basics of Java programming and object-oriented design.",
-                            ImageUrl = "img/java.jpeg",
+                            ImageUrl = "~/img/java.jpeg",
                             TeacherId = 2,
                             Title = "Java for Beginners",
                             Views = 1100
@@ -133,7 +133,7 @@ namespace EduGate.Migrations
                             Id = 4,
                             Category = "AI & Data Science",
                             Description = "Explore the basics of machine learning including supervised learning, classification, and regression.",
-                            ImageUrl = "img/machine learning.jpg",
+                            ImageUrl = "~/img/machine learning.jpg",
                             TeacherId = 2,
                             Title = "Machine Learning Basics",
                             Views = 1800
@@ -143,7 +143,7 @@ namespace EduGate.Migrations
                             Id = 5,
                             Category = "AI & Data Science",
                             Description = "Build deep learning models using TensorFlow, focusing on neural networks and CNNs.",
-                            ImageUrl = "img/tensorflow.jpg",
+                            ImageUrl = "~/img/tensorflow.jpg",
                             TeacherId = 3,
                             Title = "Deep Learning with TensorFlow",
                             Views = 950
@@ -153,7 +153,7 @@ namespace EduGate.Migrations
                             Id = 6,
                             Category = "AI & Data Science",
                             Description = "Analyze, visualize, and manipulate data using Python's powerful Pandas library.",
-                            ImageUrl = "img/pandas.png",
+                            ImageUrl = "~/img/pandas.png",
                             TeacherId = 3,
                             Title = "Data Analysis with Pandas",
                             Views = 700
@@ -163,7 +163,7 @@ namespace EduGate.Migrations
                             Id = 7,
                             Category = "Web Development",
                             Description = "Build modern web applications using ASP.NET Core MVC and Razor Pages.",
-                            ImageUrl = "img/aspnetcore.jpg",
+                            ImageUrl = "~/img/aspnetcore.jpg",
                             TeacherId = 2,
                             Title = "Web Development with ASP.NET Core",
                             Views = 900
@@ -173,7 +173,7 @@ namespace EduGate.Migrations
                             Id = 8,
                             Category = "Web Development",
                             Description = "Master React fundamentals, component-based architecture, hooks, and state management.",
-                            ImageUrl = "img/react.jpg",
+                            ImageUrl = "~/img/react.jpg",
                             TeacherId = 1,
                             Title = "Frontend Development with React",
                             Views = 1300
@@ -183,10 +183,82 @@ namespace EduGate.Migrations
                             Id = 9,
                             Category = "Web Development",
                             Description = "Start your web development journey with the basics of HTML and CSS.",
-                            ImageUrl = "img/htmlcss.jpg",
+                            ImageUrl = "~/img/htmlcss.jpg",
                             TeacherId = 1,
                             Title = "HTML & CSS for Beginners",
                             Views = 800
+                        });
+                });
+
+            modelBuilder.Entity("EduGate.Models.CourseReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Stars")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("CourseReviews");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Comment = "This course exceeded my expectations! The content was well-structured and the instructor explained complex concepts in a way that was easy to understand.",
+                            CourseId = 1,
+                            CreatedDate = new DateTime(2025, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Stars = 5,
+                            StudentId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Comment = "Great course overall. Some sections could have more depth, but I learned a lot and would recommend it to others interested in this topic.",
+                            CourseId = 1,
+                            CreatedDate = new DateTime(2025, 3, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Stars = 4,
+                            StudentId = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Comment = "The instructor's approach to teaching Python's advanced concepts made them much easier to grasp. Highly recommend!",
+                            CourseId = 2,
+                            CreatedDate = new DateTime(2025, 2, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Stars = 5,
+                            StudentId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Comment = "Solid introduction to machine learning concepts, though I would have appreciated more practical examples.",
+                            CourseId = 4,
+                            CreatedDate = new DateTime(2025, 1, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Stars = 3,
+                            StudentId = 2
                         });
                 });
 
@@ -224,8 +296,8 @@ namespace EduGate.Migrations
                         new
                         {
                             Id = 1,
-                            CourseId = 1,
-                            Description = "Introduction to programming basics",
+                            CourseId = 3,
+                            Description = "Learn the fundamentals of programming and how to begin your journey with Java.",
                             Order = 1,
                             Title = "Module 1: Getting Started"
                         },
@@ -233,9 +305,33 @@ namespace EduGate.Migrations
                         {
                             Id = 2,
                             CourseId = 2,
-                            Description = "Machine learning core concepts",
+                            Description = "Discover the core concepts and principles of machine learning.",
                             Order = 1,
                             Title = "Module 1: ML Fundamentals"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CourseId = 1,
+                            Description = "Understand how variables work in C#, their types, and how to use them effectively.",
+                            Order = 1,
+                            Title = "Module 1: Variables"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CourseId = 1,
+                            Description = "Learn how to use conditional logic in C# using if, else if, and else statements.",
+                            Order = 2,
+                            Title = "Module 2: If condition"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CourseId = 1,
+                            Description = "Explore how to use for loops to repeat actions in C# efficiently.",
+                            Order = 3,
+                            Title = "Module 3: For loop"
                         });
                 });
 
@@ -319,7 +415,7 @@ namespace EduGate.Migrations
                             Options = "A container for data;A type of loop;A function;None of the above",
                             Points = 1,
                             Question = "What is a variable?",
-                            QuizContentId = 1
+                            QuizContentId = 7
                         },
                         new
                         {
@@ -328,7 +424,88 @@ namespace EduGate.Migrations
                             Options = "Model too simple;Model too complex;Model has low accuracy;Model has high bias",
                             Points = 1,
                             Question = "What is overfitting in machine learning?",
-                            QuizContentId = 2
+                            QuizContentId = 8
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CorrectOptionIndex = 2,
+                            Options = "int = age 25;age int = 25;int age = 25;int: age = 25",
+                            Points = 1,
+                            Question = "Which of the following is a correct variable declaration in C#?",
+                            QuizContentId = 9
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CorrectOptionIndex = 1,
+                            Options = "int;bool;string;char",
+                            Points = 1,
+                            Question = "Which type is used to store a true or false value in C#?",
+                            QuizContentId = 9
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CorrectOptionIndex = 3,
+                            Options = "Declares a number;Declares a boolean;Declares a character;Declares a text variable",
+                            Points = 1,
+                            Question = "What does 'string name = \"Alice\";' do?",
+                            QuizContentId = 9
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CorrectOptionIndex = 2,
+                            Options = "for;switch;if;loop",
+                            Points = 1,
+                            Question = "Which keyword is used for checking a condition in C#?",
+                            QuizContentId = 10
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CorrectOptionIndex = 1,
+                            Options = "Adult;Minor;Error;Nothing",
+                            Points = 1,
+                            Question = "What will the following code print?\n\nint age = 16;\nif (age >= 18) {\n Console.WriteLine(\"Adult\");\n} else {\n Console.WriteLine(\"Minor\");\n}",
+                            QuizContentId = 10
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CorrectOptionIndex = 1,
+                            Options = "=;==;===;!=",
+                            Points = 1,
+                            Question = "Which operator is used for comparison in conditions?",
+                            QuizContentId = 10
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CorrectOptionIndex = 0,
+                            Options = "0 1 2;1 2 3;0 1 2 3;1 2",
+                            Points = 1,
+                            Question = "What is the output of this loop?\n\nfor (int i = 0; i < 3; i++) {\n Console.WriteLine(i);\n}",
+                            QuizContentId = 11
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CorrectOptionIndex = 2,
+                            Options = "Initialization;Condition;Update;Break",
+                            Points = 1,
+                            Question = "Which part of the 'for' loop runs after each iteration?",
+                            QuizContentId = 11
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CorrectOptionIndex = 0,
+                            Options = "for (;;);for (int i = 0; i < 1; i++);for (int i = 0; i < 10; i++);for (int i = 10; i > 0; i--)",
+                            Points = 1,
+                            Question = "Which of the following creates an infinite loop?",
+                            QuizContentId = 11
                         });
                 });
 
@@ -474,23 +651,53 @@ namespace EduGate.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = 7,
                             ContentType = "Quiz",
                             ModuleId = 1,
                             Order = 2,
-                            ShortDescription = "Test your knowledge of programming fundamentals",
+                            ShortDescription = "Test your understanding of general programming fundamentals.",
                             Title = "Programming Basics Quiz",
                             PassingScore = 70
                         },
                         new
                         {
-                            Id = 2,
+                            Id = 8,
                             ContentType = "Quiz",
                             ModuleId = 2,
                             Order = 2,
-                            ShortDescription = "Test your understanding of ML concepts",
+                            ShortDescription = "Evaluate your knowledge of machine learning fundamentals.",
                             Title = "Machine Learning Concepts Quiz",
                             PassingScore = 70
+                        },
+                        new
+                        {
+                            Id = 9,
+                            ContentType = "Quiz",
+                            ModuleId = 3,
+                            Order = 3,
+                            ShortDescription = "Check your knowledge of variable types, naming, and usage in C#.",
+                            Title = "C# Variables Quiz",
+                            PassingScore = 50
+                        },
+                        new
+                        {
+                            Id = 10,
+                            ContentType = "Quiz",
+                            ModuleId = 4,
+                            Order = 3,
+                            ShortDescription = "Assess your understanding of conditional statements in C#.",
+                            Title = "C# Conditions Quiz",
+                            PassingScore = 50
+                        },
+                        new
+                        {
+                            Id = 11,
+                            ContentType = "Quiz",
+                            ModuleId = 5,
+                            Order = 3,
+                            ShortDescription = "Test how well you understand looping mechanisms like 'for' loops in C#.",
+                            Title = "C# Loops Quiz",
+                            PassingScore = 50
                         });
                 });
 
@@ -498,11 +705,44 @@ namespace EduGate.Migrations
                 {
                     b.HasBaseType("EduGate.Models.ModuleContent");
 
-                    b.Property<string>("Text")
+                    b.Property<string>("TextLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasDiscriminator().HasValue("Text");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 4,
+                            ContentType = "Text",
+                            ModuleId = 3,
+                            Order = 1,
+                            ShortDescription = "Detailed text explanation on declaring and using variables in C#.",
+                            Title = "C# variables explanation",
+                            TextLocation = "~/contents/txt/IntroToCSharp/CSharpVariables.txt"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            ContentType = "Text",
+                            ModuleId = 4,
+                            Order = 1,
+                            ShortDescription = "Learn the syntax and logic behind if conditions in C#.",
+                            Title = "C# if conditions explanation",
+                            TextLocation = "~/contents/txt/IntroToCSharp/CSharpIfStatement.txt"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            ContentType = "Text",
+                            ModuleId = 5,
+                            Order = 1,
+                            ShortDescription = "Read how for loops function in C# and how to implement them.",
+                            Title = "C# for loops explanation",
+                            TextLocation = "~/contents/txt/IntroToCSharp/CSharpForLoops.txt"
+                        });
                 });
 
             modelBuilder.Entity("EduGate.Models.VideoContent", b =>
@@ -518,6 +758,38 @@ namespace EduGate.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.HasDiscriminator().HasValue("Video");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ContentType = "Video",
+                            ModuleId = 3,
+                            Order = 2,
+                            ShortDescription = "Watch this video to understand how variables work in C#.",
+                            Title = "C# variables explanation",
+                            VideoLocation = "~/contents/vid/IntroToCSharp/CSharpVariables.mp4"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ContentType = "Video",
+                            ModuleId = 4,
+                            Order = 2,
+                            ShortDescription = "This video explains how to use if, else if, and else statements in C#.",
+                            Title = "C# if conditions explanation",
+                            VideoLocation = "~/contents/vid/IntroToCSharp/CSharpIfStatement.mp4"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ContentType = "Video",
+                            ModuleId = 5,
+                            Order = 2,
+                            ShortDescription = "Understand how to use for loops in C# with practical examples.",
+                            Title = "C# for loops explanation",
+                            VideoLocation = "~/contents/vid/IntroToCSharp/CSharpForLoops.mp4"
+                        });
                 });
 
             modelBuilder.Entity("EduGate.Models.ContentProgress", b =>
@@ -548,6 +820,25 @@ namespace EduGate.Migrations
                         .IsRequired();
 
                     b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("EduGate.Models.CourseReview", b =>
+                {
+                    b.HasOne("EduGate.Models.Course", "Course")
+                        .WithMany("Reviews")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EduGate.Models.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("EduGate.Models.Module", b =>
@@ -605,6 +896,8 @@ namespace EduGate.Migrations
             modelBuilder.Entity("EduGate.Models.Course", b =>
                 {
                     b.Navigation("Modules");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("EduGate.Models.Module", b =>

@@ -1,8 +1,11 @@
 ﻿using EduGate.Data;
 using EduGate.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Security.Claims;
 
 public class AccountController : Controller
 {
@@ -57,6 +60,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
+    [HttpPost]
     public IActionResult Login(string email, string password, string returnUrl = null)
     {
         var student = _context.Students.FirstOrDefault(s => s.Email == email && s.Password == password);
@@ -98,7 +102,6 @@ public class AccountController : Controller
         ViewBag.ReturnUrl = returnUrl;
         return View();
     }
-
     // Add a logout action
     public IActionResult Logout()
     {

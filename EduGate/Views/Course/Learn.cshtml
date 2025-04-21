@@ -5,8 +5,28 @@
     var highlight = "#FFB703";
     var btnColor = "#FCBF49";
 
-    var currentModule = Model.GetCurrentModule();
-    var currentContent = Model.GetNextIncompleteContent(currentModule);
+    // Get content ID from query string if provided
+    int? requestedContentId = Context.Request.Query["contentId"].Count > 0 ?
+        int.Parse(Context.Request.Query["contentId"]) : null;
+
+    // Get module ID from query string if provided
+    int? requestedModuleId = Context.Request.Query["moduleId"].Count > 0 ?
+        int.Parse(Context.Request.Query["moduleId"]) : null;
+
+    // Set current module and content based on request or default to first incomplete
+    var currentModule = Model.GetCurrentModule(requestedModuleId);
+
+    // Get the selected content if specified, otherwise get next incomplete content
+    ModuleContent currentContent = null;
+
+    if (requestedContentId.HasValue)
+    {
+        currentContent = currentModule?.Contents.FirstOrDefault(c => c.Id == requestedContentId);
+    }
+    else if (currentModule != null)
+    {
+        currentContent = Model.GetNextIncompleteContent(currentModule);
+    }
 }
 
 <div class="container-fluid mt-4">
@@ -55,7 +75,7 @@
                                             @foreach (var content in module.Contents.OrderBy(c => c.Order))
                                             {
                                                 var isCompleted = Model.StudentProgress.ContainsKey(content.Id) && Model.StudentProgress[content.Id];
-                                                var isCurrent = currentContent?.Id == content.Id;
+                                                var isCurrent = content.Id == currentContent?.Id;
                                                 var contentType = content.ContentType;
                                                 var contentTypeIcon = contentType == "Video" ? "bi-camera-video" :
                                                 contentType == "Quiz" ? "bi-question-circle" : "bi-file-text";
@@ -88,20 +108,41 @@
         <div class="col-md-9">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center" style="background-color: @bgColor; color: white;">
-                    <h5 class="mb-0">@(currentContent?.Title ?? "Course Overview")</h5>
+                    <h5 class="mb-0">
+                        @if (currentContent != null)
+                        {
+                            @currentContent.Title
+                        }
+                        else if (currentModule != null)
+                        {
+                            @currentModule.Title
+                        }
+                        else
+                        {
+                            @("Course Overview")
+                        }
+                    </h5>
                     <div>
                         @if (currentContent != null)
                         {
-                            <form method="post" asp-action="MarkContentComplete" asp-route-id="@Model.Course.Id" asp-route-contentId="@currentContent.Id">
-                                <button type="submit" class="btn btn-sm" style="background-color: @btnColor; color: @bgColor;">
-                                    Mark Complete
-                                </button>
+                            <form method="post" asp-action="MarkContentComplete" asp-route-id="@Model.Course.Id" asp-route-contentId="@currentContent.Id"
+                                  asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+                                @if (Model.StudentProgress.ContainsKey(currentContent.Id) && Model.StudentProgress[currentContent.Id])
+                                {
+                                    <span class="badge bg-success me-2">Completed</span>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-sm" style="background-color: @btnColor; color: @bgColor;">
+                                        Mark Complete
+                                    </button>
+                                }
                             </form>
                         }
                     </div>
                 </div>
                 <div class="card-body">
-                    @if (currentContent == null)
+                    @if (currentContent == null && currentModule == null)
                     {
                         <div class="text-center py-5">
                             <h3>Welcome to @Model.Course.Title</h3>
@@ -109,22 +150,36 @@
                             <p>Select a module from the left sidebar to begin learning.</p>
                         </div>
                     }
+                    else if (currentContent == null && currentModule != null)
+                    {
+                        <div class="text-center py-5">
+                            <h3>@currentModule.Title</h3>
+                            <p>@currentModule.Description</p>
+                            <p>Select a lesson from the left sidebar to begin this module.</p>
+                        </div>
+                    }
                     else if (currentContent is VideoContent videoContent)
                     {
                         <div class="ratio ratio-16x9 mb-3">
-                            <video controls>
-                                <source src="@videoContent.VideoLocation" type="video/mp4">
+                            <video controls id="videoPlayer" onended="markVideoWatched()">
+                                <source src="@Url.Content(videoContent.VideoLocation)" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         </div>
+                        
                         <h4>@videoContent.Title</h4>
                         <p>@videoContent.ShortDescription</p>
+
+                        @if (videoContent.DurationSeconds.HasValue)
+                        {
+                            <p><small class="text-muted">Duration: @(TimeSpan.FromSeconds(videoContent.DurationSeconds.Value).ToString(@"mm\:ss"))</small></p>
+                        }
                     }
                     else if (currentContent is TextContent textContent)
                     {
                         <h4>@textContent.Title</h4>
-                        <div class="mt-3">
-                            @Html.Raw(textContent.Text)
+                        <div class="mt-3 text-content">
+                            @Html.Raw(System.IO.File.ReadAllText(textContent.TextLocation.Replace("~", "C:/Users/AhmedNehad/source/repos/EduGate/EduGate/wwwroot")))
                         </div>
                     }
                     else if (currentContent is QuizContent quizContent)
@@ -132,12 +187,19 @@
                         <h4>@quizContent.Title</h4>
                         <p>@quizContent.ShortDescription</p>
 
-                        <form method="post" asp-action="SubmitQuiz" asp-route-id="@Model.Course.Id" asp-route-quizId="@quizContent.Id">
+                        <form method="post" asp-action="SubmitQuiz" asp-route-id="@Model.Course.Id" asp-route-quizId="@quizContent.Id"
+                              asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
                             @for (int i = 0; i < quizContent.Questions.Count; i++)
                             {
                                 var question = quizContent.Questions[i];
                                 <div class="card mb-3">
-                                    <div class="card-header">Question @(i + 1)</div>
+                                    <div class="card-header">
+                                        Question @(i + 1)
+                                        @if (question.Points > 1)
+                                        {
+                                            <span class="badge bg-info ms-2">@question.Points pts</span>
+                                        }
+                                    </div>
                                     <div class="card-body">
                                         <p>@question.Question</p>
 
@@ -161,7 +223,130 @@
                         </form>
                     }
                 </div>
+
+                <!-- Navigation buttons -->
+                @if (currentContent != null)
+                {
+                    <div class="card-footer d-flex justify-content-between">
+                        @{
+                            // Find previous content in same module
+                            ModuleContent prevContent = null;
+                            if (currentModule != null)
+                            {
+                                var contentList = currentModule.Contents.OrderBy(c => c.Order).ToList();
+                                var currentIndex = contentList.FindIndex(c => c.Id == currentContent.Id);
+                                if (currentIndex > 0)
+                                {
+                                    prevContent = contentList[currentIndex - 1];
+                                }
+                            }
+
+                            // Find next content in same module
+                            ModuleContent nextContent = null;
+                            if (currentModule != null)
+                            {
+                                var contentList = currentModule.Contents.OrderBy(c => c.Order).ToList();
+                                var currentIndex = contentList.FindIndex(c => c.Id == currentContent.Id);
+                                if (currentIndex < contentList.Count - 1)
+                                {
+                                    nextContent = contentList[currentIndex + 1];
+                                }
+                            }
+
+                            // Find previous module
+                            Module prevModule = null;
+                            if (currentModule != null)
+                            {
+                                var moduleList = Model.Course.Modules.OrderBy(m => m.Order).ToList();
+                                var currentModuleIndex = moduleList.FindIndex(m => m.Id == currentModule.Id);
+                                if (currentModuleIndex > 0)
+                                {
+                                    prevModule = moduleList[currentModuleIndex - 1];
+                                }
+                            }
+
+                            // Find next module
+                            Module nextModule = null;
+                            if (currentModule != null)
+                            {
+                                var moduleList = Model.Course.Modules.OrderBy(m => m.Order).ToList();
+                                var currentModuleIndex = moduleList.FindIndex(m => m.Id == currentModule.Id);
+                                if (currentModuleIndex < moduleList.Count - 1)
+                                {
+                                    nextModule = moduleList[currentModuleIndex + 1];
+                                }
+                            }
+
+                            var prevModuleLastContent = prevModule?.Contents.OrderBy(c => c.Order).LastOrDefault();
+                            var nextModuleFirstContent = nextModule?.Contents.OrderBy(c => c.Order).FirstOrDefault();
+                        }
+
+                        <div>
+                            @if (prevContent != null)
+                            {
+                                <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id, moduleId = currentModule.Id, contentId = prevContent.Id })"
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-chevron-left"></i> Previous
+                                </a>
+                            }
+                            else if (prevModule != null && prevModuleLastContent != null)
+                            {
+                                <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id, moduleId = prevModule.Id, contentId = prevModuleLastContent.Id })"
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-chevron-left"></i> Previous Module
+                                </a>
+                            }
+                        </div>
+
+                        <div>
+                            @if (nextContent != null)
+                            {
+                                <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id, moduleId = currentModule.Id, contentId = nextContent.Id })"
+                                   class="btn btn-outline-primary">
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                            else if (nextModule != null && nextModuleFirstContent != null)
+                            {
+                                <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id, moduleId = nextModule.Id, contentId = nextModuleFirstContent.Id })"
+                                   class="btn btn-outline-primary">
+                                    Next Module <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Function to automatically mark video as watched when it finishes
+    function markVideoWatched() {
+        const form = document.querySelector('form[asp-action="MarkContentComplete"]');
+        if (form) {
+            form.submit();
+        }
+    }
+
+    // Add event listener to track text content scrolling
+    document.addEventListener('DOMContentLoaded', function() {
+        const textContent = document.querySelector('.text-content');
+        if (textContent) {
+            let scrollThreshold = false;
+
+            // Mark as read when user scrolls 80% of the content
+            textContent.addEventListener('scroll', function() {
+                if (scrollThreshold) return;
+
+                const scrollPosition = textContent.scrollTop + textContent.clientHeight;
+                const scrollHeight = textContent.scrollHeight;
+
+                if (scrollPosition >= scrollHeight * 0.8) {
+                    scrollThreshold = true;
+                }
+            });
+        }
+    });
+</script>

@@ -1,0 +1,31 @@
+<div class="guide-section">
+    <h2 class="mb-3" style="color:#023047;">C# <code>for</code> Loops - Quick Guide</h2>
+
+    <p>A <code>for</code> loop repeats code a set number of times.</p>
+
+    <h4 class="mt-4" style="color:#219EBC;">Syntax:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>for (init; condition; update)
+{
+    // Code here
+}</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">Example:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>for (int i = 0; i < 5; i++)
+{
+    Console.WriteLine(i);
+}</code></pre>
+
+    <ul>
+        <li>Starts at <code>i = 0</code></li>
+        <li>Runs while <code>i < 5</code></li>
+        <li>Increases <code>i</code> by 1 each time</li>
+    </ul>
+
+    <h4 class="mt-4" style="color:#219EBC;">Countdown Example:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>for (int i = 5; i > 0; i--)
+{
+    Console.WriteLine(i);
+}</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">Avoid infinite loops!</h4>
+</div>

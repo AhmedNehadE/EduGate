@@ -84,7 +84,7 @@
                                                 <div class="col-md-3 mb-4">
                                                     <a href="@Url.Action("Details", "Course", new { id = course.Id })" class="text-decoration-none">
                                                         <div class="card h-100 course-card">
-                                                            <img src="@course.ImageUrl" class="card-img-top" alt="Course Image" style="height: 180px; object-fit: cover;">
+                                                            <img src="@Url.Content(course.ImageUrl)" class="card-img-top" alt="Course Image" style="height: 180px; object-fit: cover;">
                                                             <div class="card-body">
                                                                 <h5 class="card-title">@course.Title</h5>
                                                                 <p class="card-text">Views: @course.Views</p>

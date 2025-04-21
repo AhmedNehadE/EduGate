@@ -127,7 +127,8 @@ namespace EduGate.Models
     public class TextContent : ModuleContent
     {
         [Required]
-        public string Text { get; set; }
+        [StringLength(500)]
+        public string TextLocation { get; set; }
 
         public TextContent()
         {
@@ -222,4 +223,6 @@ namespace EduGate.Models
         // For quiz contents, stores the number of attempts
         public int Attempts { get; set; } = 0;
     }
+
+
 }

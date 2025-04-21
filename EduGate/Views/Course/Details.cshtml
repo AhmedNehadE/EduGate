@@ -1,30 +1,18 @@
-﻿@model EduGate.Models.Course
-
+﻿@model EduGate.Models.CourseDetailsViewModel
+@using Microsoft.AspNetCore.Identity
 @{
-    ViewData["Title"] = Model.Title;
+    ViewData["Title"] = Model.Course.Title;
 }
 @{
-    // Get the current student ID from session
-    var studentId = Context.Session.GetInt32("StudentId");
-
-    // Default button state
     string buttonText = "Enroll Now";
     string buttonClass = "btn-primary";
-    bool isEnrolled = false;
 
-    // Check if student is logged in and enrolled
-    if (studentId.HasValue)
+    if (Model.IsEnrolled)
     {
-        // This requires the controller to have loaded the student with EnrolledCourses included
-        var student = ViewBag.CurrentStudent as EduGate.Models.Student;
-        if (student != null && student.EnrolledCourses.Any(c => c.Id == Model.Id))
-        {
-            buttonText = "Continue Learning";
-            buttonClass = "btn-success";
-            isEnrolled = true;
-        }
+        buttonText = "Continue Learning";
+        buttonClass = "btn-success";
     }
-    else
+    else if (Context.Session.GetInt32("StudentId") == null)
     {
         buttonText = "Login to Enroll";
     }
@@ -35,19 +23,35 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Home</a></li>
             <li class="breadcrumb-item"><a href="@Url.Action("Index", "Course")">Courses</a></li>
-            <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Course.Title</li>
         </ol>
     </nav>
+
+    <!-- Alert for review submission -->
+    @if (TempData["ReviewSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["ReviewSuccess"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ReviewError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ReviewError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
     <div class="row">
         <!-- Course Main Content -->
         <div class="col-lg-8">
             <div class="card mb-4 shadow-sm">
-                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                @if (!string.IsNullOrEmpty(Model.Course.ImageUrl))
                 {
-                    <img src="@Url.Content("~/"+Model.ImageUrl)"
+                    <img src="@Url.Content(Model.Course.ImageUrl)"
                          class="card-img-top"
-                         alt="@Model.Title"
+                         alt="@Model.Course.Title"
                          style="max-height: 400px; object-fit: cover;"
                          onerror="this.onerror=null; this.src='~/images/course-placeholder.jpg';">
                 }
@@ -55,85 +59,114 @@
                 {
                     <img src="~/images/course-placeholder.jpg"
                          class="card-img-top"
-                         alt="@Model.Title"
+                         alt="@Model.Course.Title"
                          style="max-height: 400px; object-fit: cover;">
                 }
                 <div class="card-body">
-                    <h1 class="card-title">@Model.Title</h1>
+                    <h1 class="card-title">@Model.Course.Title</h1>
                     <p class="card-text text-muted">
-                        <span class="badge bg-primary me-2">@Model.Category</span>
-                        <span><i class="bi bi-eye"></i> @Model.Views views</span>
+                        <span class="badge bg-primary me-2">@Model.Course.Category</span>
+                        <span><i class="bi bi-eye"></i> @Model.Course.Views views</span>
+                        @if (Model.Course.Reviews.Any())
+                        {
+                            <span class="ms-3">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= Math.Round(Model.Course.AverageRating))
+                                    {
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-star text-warning"></i>
+                                    }
+                                }
+                                <span class="ms-1">(@Model.Course.Reviews.Count)</span>
+                            </span>
+                        }
                     </p>
                     <hr />
                     <div class="course-description mt-4">
                         <h4>Course Description</h4>
-                        <p>@Html.Raw(Model.Description)</p>
+                        <p>@Html.Raw(Model.Course.Description)</p>
                     </div>
 
                     <!-- Course Content / Syllabus -->
                     <div class="course-content mt-5">
                         <h4>Course Content</h4>
-                        <div class="accordion mt-3" id="courseContentAccordion">
-                            <!-- This would ideally be populated from your database with actual lesson content -->
-                            <!-- Example accordion item -->
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="headingOne">
-                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                        Module 1: Introduction
-                                    </button>
-                                </h2>
-                                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#courseContentAccordion">
-                                    <div class="accordion-body">
-                                        <ul class="list-group list-group-flush">
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <i class="bi bi-play-circle me-2"></i> Welcome to the Course
-                                                </div>
-                                                <span class="badge bg-light text-dark">15 min</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <i class="bi bi-file-text me-2"></i> Course Overview
-                                                </div>
-                                                <span class="badge bg-light text-dark">Reading</span>
-                                            </li>
-                                        </ul>
+                        @if (Model.Course.Modules != null && Model.Course.Modules.Any())
+                        {
+                            <div class="accordion mt-3" id="courseContentAccordion">
+                                @foreach (var module in Model.Course.Modules.OrderBy(m => m.Order))
+                                {
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading@(module.Id)">
+                                            <button class="accordion-button @(module.Order != 1 ? "collapsed" : "")" type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#collapse@(module.Id)"
+                                                    aria-expanded="@(module.Order == 1 ? "true" : "false")"
+                                                    aria-controls="collapse@(module.Id)">
+                                                Module @(module.Order): @module.Title
+                                            </button>
+                                        </h2>
+                                        <div id="collapse@(module.Id)"
+                                             class="accordion-collapse collapse @(module.Order == 1 ? "show" : "")"
+                                             aria-labelledby="heading@(module.Id)"
+                                             data-bs-parent="#courseContentAccordion">
+                                            <div class="accordion-body">
+                                                <ul class="list-group list-group-flush">
+                                                    @foreach (var content in module.Contents.OrderBy(c => c.Order))
+                                                    {
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                @if (content.ContentType == "Video")
+                                                                {
+                                                                    <i class="bi bi-play-circle me-2"></i>
+                                                                }
+                                                                else if (content.ContentType == "Text")
+                                                                {
+                                                                    <i class="bi bi-file-text me-2"></i>
+                                                                }
+                                                                else if (content.ContentType == "Quiz")
+                                                                {
+                                                                    <i class="bi bi-journal-check me-2"></i>
+                                                                }
+                                                                @content.Title
+                                                            </div>
+                                                            <span class="badge bg-light text-dark">
+                                                                @if (content.ContentType == "Video")
+                                                                {
+                                                                    var video = (VideoContent)content;
+                                                                    if (video.DurationSeconds.HasValue)
+                                                                    {
+                                                                        var duration = TimeSpan.FromSeconds(video.DurationSeconds.Value);
+                                                                        @($"{(duration.Hours > 0 ? duration.Hours + "h " : "")}{duration.Minutes} min")
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        @("Video")
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    @content.ContentType
+                                                                }
+                                                            </span>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                }
                             </div>
-                            <!-- Example additional module -->
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="headingTwo">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                        Module 2: Core Concepts
-                                    </button>
-                                </h2>
-                                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#courseContentAccordion">
-                                    <div class="accordion-body">
-                                        <ul class="list-group list-group-flush">
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <i class="bi bi-play-circle me-2"></i> Understanding the Basics
-                                                </div>
-                                                <span class="badge bg-light text-dark">25 min</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <i class="bi bi-play-circle me-2"></i> Advanced Techniques
-                                                </div>
-                                                <span class="badge bg-light text-dark">30 min</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <i class="bi bi-journal-check me-2"></i> Module Quiz
-                                                </div>
-                                                <span class="badge bg-light text-dark">Quiz</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mt-3">
+                                No modules have been added to this course yet.
                             </div>
-                        </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -144,46 +177,78 @@
                     <h4 class="mb-0">Student Reviews</h4>
                 </div>
                 <div class="card-body">
-                    <!-- Review Form -->
-                    <div class="mb-4 p-3 bg-light rounded">
-                        <h5>Leave a Review</h5>
-                        <form>
-                            <div class="mb-3">
-                                <label for="rating" class="form-label">Rating</label>
-                                <select class="form-select" id="rating">
-                                    <option value="5">★★★★★ (5/5)</option>
-                                    <option value="4">★★★★☆ (4/5)</option>
-                                    <option value="3">★★★☆☆ (3/5)</option>
-                                    <option value="2">★★☆☆☆ (2/5)</option>
-                                    <option value="1">★☆☆☆☆ (1/5)</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="reviewText" class="form-label">Your Review</label>
-                                <textarea class="form-control" id="reviewText" rows="3"></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Submit Review</button>
-                        </form>
-                    </div>
+                    <!-- Review Form - Only show to enrolled students who haven't reviewed yet -->
+                    @if (Model.IsEnrolled && !Model.HasReviewed)
+                    {
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <h5>Leave a Review</h5>
+                            <form asp-action="AddReview" asp-controller="Course" method="post">
+                                <input type="hidden" name="courseId" value="@Model.Course.Id" />
+                                <div class="mb-3">
+                                    <label for="stars" class="form-label">Rating</label>
+                                    <select class="form-select" id="stars" name="stars">
+                                        <option value="5">★★★★★ (5/5)</option>
+                                        <option value="4">★★★★☆ (4/5)</option>
+                                        <option value="3">★★★☆☆ (3/5)</option>
+                                        <option value="2">★★☆☆☆ (2/5)</option>
+                                        <option value="1">★☆☆☆☆ (1/5)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Your Review</label>
+                                    <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit Review</button>
+                            </form>
+                        </div>
+                    }
+                    else if (Model.IsEnrolled && Model.HasReviewed)
+                    {
+                        <div class="alert alert-info mb-4">
+                            You have already reviewed this course. Thank you for your feedback!
+                        </div>
+                    }
+                    else if (!Model.IsEnrolled)
+                    {
+                        <div class="alert alert-info mb-4">
+                            You need to enroll in this course to leave a review.
+                        </div>
+                    }
 
-                    <!-- Sample Reviews -->
+                    <!-- Reviews from database -->
                     <div class="review-list">
-                        <div class="review-item border-bottom pb-3 mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <h5 class="mb-0 me-2">John Doe</h5>
-                                <div class="text-warning">★★★★★</div>
+                        @if (Model.Course.Reviews.Any())
+                        {
+                            foreach (var review in Model.Course.Reviews.OrderByDescending(r => r.CreatedDate))
+                            {
+                                <div class="review-item border-bottom pb-3 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0 me-2">@review.Student.Name</h5>
+                                        <div class="text-warning">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= review.Stars)
+                                                {
+                                                    <i class="bi bi-star-fill"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-star"></i>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small">Posted on: @review.CreatedDate.ToString("MMMM d, yyyy")</p>
+                                    <p>@review.Comment</p>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-light">
+                                No reviews yet. Be the first to review this course!
                             </div>
-                            <p class="text-muted small">Posted on: January 15, 2025</p>
-                            <p>This course exceeded my expectations! The content was well-structured and the instructor explained complex concepts in a way that was easy to understand.</p>
-                        </div>
-                        <div class="review-item">
-                            <div class="d-flex align-items-center mb-2">
-                                <h5 class="mb-0 me-2">Jane Smith</h5>
-                                <div class="text-warning">★★★★☆</div>
-                            </div>
-                            <p class="text-muted small">Posted on: March 5, 2025</p>
-                            <p>Great course overall. Some sections could have more depth, but I learned a lot and would recommend it to others interested in this topic.</p>
-                        </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -198,11 +263,11 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between">
                             <span>Duration:</span>
-                            <span>8 weeks</span>
+                            <span>@(Model.Course.Modules.Count) modules</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>Difficulty:</span>
-                            <span>Intermediate</span>
+                            <span>Category:</span>
+                            <span>@Model.Course.Category</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
                             <span>Language:</span>
@@ -214,20 +279,20 @@
                         </li>
                     </ul>
                     <div class="d-grid gap-2 mt-4">
-                        @if (isEnrolled)
+                        @if (Model.IsEnrolled)
                         {
-                            <a href="@Url.Action("Learn", "Course", new { id = Model.Id })" class="btn @buttonClass btn-lg">@buttonText</a>
+                            <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id })" class="btn @buttonClass btn-lg">@buttonText</a>
                         }
-                        else if (studentId.HasValue)
+                        else if (Context.Session.GetInt32("StudentId").HasValue)
                         {
                             <form asp-action="Enroll" asp-controller="Course" method="post">
-                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="id" value="@Model.Course.Id" />
                                 <button type="submit" class="btn @buttonClass btn-lg w-100">@buttonText</button>
                             </form>
                         }
                         else
                         {
-                            <a href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("Details", "Course", new { id = Model.Id }) })" class="btn @buttonClass btn-lg">@buttonText</a>
+                            <a href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("Details", "Course", new { id = Model.Course.Id }) })" class="btn @buttonClass btn-lg">@buttonText</a>
                         }
                         <button class="btn btn-outline-secondary">Add to Wishlist</button>
                     </div>
@@ -241,11 +306,10 @@
                     <div class="d-flex align-items-center mb-3">
                         <img src="~/img/instructor-placeholder.png" class="rounded-circle me-3" alt="Instructor" width="60" height="60" onerror="this.src='~/img/profile-placeholder.jpg'">
                         <div>
-                            <h5 class="mb-0">Dr. Emily Johnson</h5>
-                            <p class="text-muted mb-0">Professor of Computer Science</p>
+                            <h5 class="mb-0">@Model.Course.Teacher.Name</h5>
+                            <p class="text-muted mb-0">@Model.Course.Teacher.Email</p>
                         </div>
                     </div>
-                    <p>Dr. Johnson has over 15 years of experience in the field and has taught at leading universities around the world.</p>
                 </div>
             </div>
 
@@ -253,22 +317,27 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h4 class="card-title">Related Courses</h4>
-                    <div class="list-group list-group-flush">
-                        <a href="@Url.Action("Details", "Course", new { id = 1 })" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Advanced Topics</h6>
-                                <small class="text-muted">12 weeks</small>
-                            </div>
-                            <p class="mb-1">Take your knowledge to the next level with this advanced course.</p>
-                        </a>
-                        <a href="@Url.Action("Details", "Course", new { id = 2 })" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Practical Workshop</h6>
-                                <small class="text-muted">4 weeks</small>
-                            </div>
-                            <p class="mb-1">Hands-on practice with real-world projects and applications.</p>
-                        </a>
-                    </div>
+                    @if (Model.RelatedCourses.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var relatedCourse in Model.RelatedCourses)
+                            {
+                                <a href="@Url.Action("Details", "Course", new { id = relatedCourse.Id })" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@relatedCourse.Title</h6>
+                                        <small class="text-muted">@relatedCourse.Modules.Count modules</small>
+                                    </div>
+                                    <p class="mb-1">@(relatedCourse.Description.Length > 100 ? relatedCourse.Description.Substring(0, 97) + "..." : relatedCourse.Description)</p>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light">
+                            No related courses found.
+                        </div>
+                    }
                 </div>
             </div>
         </div>

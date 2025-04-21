@@ -1,0 +1,44 @@
+<div class="guide-section">
+    <h2 class="mb-3" style="color:#023047;">C# <code>if</code> Conditions - Quick Guide</h2>
+
+    <p><code>if</code> statements run code only when a condition is true.</p>
+
+    <h4 class="mt-4" style="color:#219EBC;">Syntax:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>if (condition)
+{
+    // Code runs if condition is true
+}</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">Example:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>int age = 20;
+if (age >= 18)
+{
+    Console.WriteLine("Adult");
+}</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">`if-else`:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>if (age >= 18)
+{
+    Console.WriteLine("Adult");
+}
+else
+{
+    Console.WriteLine("Minor");
+}</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">`else if`:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>if (score >= 90)
+{
+    Console.WriteLine("A");
+}
+else if (score >= 80)
+{
+    Console.WriteLine("B");
+}
+else
+{
+    Console.WriteLine("Try again");
+}</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">Use <code>==</code> for comparison, <code>=</code> for assignment!</h4>
+</div>

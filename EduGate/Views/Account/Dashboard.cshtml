@@ -26,7 +26,7 @@
                         <div class="card h-100">
                             @if (!string.IsNullOrEmpty(course.ImageUrl))
                             {
-                                <img src="@Url.Content("~/"+course.ImageUrl)" class="card-img-top" alt="@course.Title">
+                                <img src="@Url.Content(course.ImageUrl)" class="card-img-top" alt="@course.Title">
                             }
                             else
                             {
@@ -82,7 +82,7 @@
                         <div class="card h-100">
                             @if (!string.IsNullOrEmpty(course.ImageUrl))
                             {
-                                <img src="@Url.Content("~/"+course.ImageUrl)" class="card-img-top" alt="@course.Title">
+                                <img src="@Url.Content(course.ImageUrl)" class="card-img-top" alt="@course.Title">
                             }
                             else
                             {

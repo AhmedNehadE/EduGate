@@ -1,0 +1,41 @@
+<div class="guide-section">
+    <h2 class="mb-3" style="color:#023047;">C# Variables - Quick Guide</h2>
+
+    <p>Variables in C# are used to store data. Each variable has:</p>
+    <ul>
+        <li><strong>Type</strong> – what kind of data it holds</li>
+        <li><strong>Name</strong> – how you refer to it</li>
+        <li><strong>Optional value</strong> – can be assigned when declared</li>
+    </ul>
+
+    <h4 class="mt-4" style="color:#219EBC;">Syntax:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>type variableName = value;</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">Examples:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>int age = 25;               // Integer
+string name = "Alice";      // Text
+double height = 5.9;        // Decimal number
+bool isOnline = true;       // True or false
+char grade = 'A';           // Single character</code></pre>
+
+    <h4 class="mt-4" style="color:#219EBC;">Rules for Naming Variables:</h4>
+    <ul>
+        <li>Must start with a letter or underscore</li>
+        <li>Cannot use spaces or special characters</li>
+        <li>Cannot be a C# keyword (like <code>int</code>, <code>class</code>, etc.)</li>
+        <li>Use <em>camelCase</em> by convention (e.g., <code>userName</code>)</li>
+    </ul>
+
+    <h4 class="mt-4" style="color:#219EBC;">Variable Types:</h4>
+    <ul>
+        <li><code>int</code> – whole numbers (e.g., 1, 100)</li>
+        <li><code>double</code> – decimal numbers (e.g., 3.14)</li>
+        <li><code>string</code> – text (e.g., "Hello")</li>
+        <li><code>bool</code> – true or false</li>
+        <li><code>char</code> – single character (e.g., 'A')</li>
+    </ul>
+
+    <h4 class="mt-4" style="color:#219EBC;">Declaring Without Assigning:</h4>
+    <pre style="background-color:#f8f9fa; padding:10px; border-radius:5px;"><code>int score;
+score = 100;</code></pre>
+</div>
