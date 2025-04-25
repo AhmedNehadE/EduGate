@@ -21,6 +21,8 @@ namespace EduGate.Data
         public DbSet<Module> Modules { get; set; }
         public DbSet<ContentProgress> ContentProgresses { get; set; }
         public DbSet<QuizQuestion> QuizQuestions { get; set; }
+        public DbSet<StudentCourse> StudentCourses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

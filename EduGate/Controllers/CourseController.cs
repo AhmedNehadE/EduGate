@@ -186,8 +186,8 @@ namespace EduGate.Controllers
                     EnrollmentDate = DateTime.Now,
                     IsCompleted = false
                 };
-
                 student.EnrolledCourses.Add(enrollment);
+                _context.StudentCourses.Add(enrollment);
                 _context.SaveChanges();
             }
 
@@ -267,7 +267,7 @@ namespace EduGate.Controllers
                 .Include(s => s.ContentProgresses)
                 .FirstOrDefault(s => s.Id == studentId);
 
-            if (student == null || !student.EnrolledCourses.Any(ec => ec.Id == course.Id))
+            if (student == null || !student.EnrolledCourses.Any(ec => ec.CourseId == course.Id))
             {
                 return RedirectToAction("Details", "Course", new { id = id });
             }
@@ -593,7 +593,7 @@ namespace EduGate.Controllers
             return View(viewModel);
         }
 
-        #region Teacher section part
+        #region Teacher create section part
         // GET: Course/Create
         public IActionResult Create()
         {
@@ -653,6 +653,7 @@ namespace EduGate.Controllers
 
                     // Add course to database
                     _context.Courses.Add(course);
+                    teacher.UploadedCourses.Add(course);
                     await _context.SaveChangesAsync();
 
                     // Redirect to module creation page
@@ -697,9 +698,9 @@ namespace EduGate.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateModule(ModuleCreateViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                var course = await _context.Courses.FindAsync(model.CourseId);
+                var course = await _context.Courses
+                .Include(c => c.Modules)
+                .FirstOrDefaultAsync(c => c.Id == model.CourseId);
                 if (course == null)
                 {
                     return NotFound();
@@ -717,30 +718,19 @@ namespace EduGate.Controllers
                 // Create module
                 var module = new Module
                 {
-                    Id = _context.Modules.ToList().Count,
                     Title = model.Title,
                     Description = model.Description,
                     CourseId = course.Id,
                     Order = course.Modules.Count + 1 // or use _context.Modules.Count for course
                 };
-
+                model.ExistingModules.Add(module);
+                course.Modules.Add(module);
                 _context.Modules.Add(module);
 
                 await _context.SaveChangesAsync();
 
                 // Redirect to content creation page
                 return RedirectToAction("CreateContent", new { moduleId = module.Id });
-            }
-
-            // If we got this far, something failed, redisplay form
-            var courseForRedisplay = await _context.Courses
-                .Include(c => c.Modules)
-                .FirstOrDefaultAsync(c => c.Id == model.CourseId);
-
-            model.CourseTitle = courseForRedisplay.Title;
-            model.ExistingModules = courseForRedisplay.Modules.OrderBy(m => m.Order).ToList();
-
-            return View(model);
         }
 
         // GET: Course/CreateContent
@@ -773,137 +763,124 @@ namespace EduGate.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateContent(ContentCreateViewModel model)
         {
-            if (ModelState.IsValid)
+            var module = await _context.Modules
+                .Include(m => m.Course)
+                .FirstOrDefaultAsync(m => m.Id == model.ModuleId);
+
+            if (module == null)
             {
-                var module = await _context.Modules
-                    .Include(m => m.Course)
-                    .FirstOrDefaultAsync(m => m.Id == model.ModuleId);
+                return NotFound();
+            }
 
-                if (module == null)
-                {
-                    return NotFound();
-                }
+            // Get current teacher
+            var teacherId = HttpContext.Session.GetInt32("TeacherId");
+            if (module.Course.TeacherId != teacherId)
+            {
+                return Unauthorized();
+            }
 
-                // Get current teacher
-                var teacherId = HttpContext.Session.GetInt32("TeacherId");
-                if (module.Course.TeacherId != teacherId)
-                {
-                    return Unauthorized();
-                }
+            var teacher = await _context.Teachers.FindAsync(teacherId);
 
-                var teacher = await _context.Teachers.FindAsync(teacherId);
+            // Create content based on type
+            ModuleContent content = null;
+            string courseFolder = module.Course.Title.Replace(" ", "");
+            string contentFolder = Path.Combine(_hostEnvironment.WebRootPath, "contents");
 
-                // Create content based on type
-                ModuleContent content = null;
-                string courseFolder = module.Course.Title.Replace(" ", "");
-                string contentFolder = Path.Combine(_hostEnvironment.WebRootPath, "contents");
-
-                switch (model.ContentType)
-                {
-                    case "Video":
-                        if (model.VideoFile != null)
+            switch (model.ContentType)
+            {
+                case "Video":
+                    if (model.VideoFile != null)
+                    {
+                        string videoFolder = Path.Combine(contentFolder, "vid", courseFolder);
+                        if (!Directory.Exists(videoFolder))
                         {
-                            string videoFolder = Path.Combine(contentFolder, "vid", courseFolder);
-                            if (!Directory.Exists(videoFolder))
-                            {
-                                Directory.CreateDirectory(videoFolder);
-                            }
-
-                            string videoFileName = model.Title.Replace(" ", "") + Path.GetExtension(model.VideoFile.FileName);
-                            string videoPath = Path.Combine(videoFolder, videoFileName);
-
-                            using (var fileStream = new FileStream(videoPath, FileMode.Create))
-                            {
-                                await model.VideoFile.CopyToAsync(fileStream);
-                            }
-
-                            var videoContent = new VideoContent
-                            {
-                                Title = model.Title,
-                                ShortDescription = model.ShortDescription,
-                                Order = module.Contents.Count + 1,
-                                VideoLocation = $"~/contents/vid/{courseFolder}/{videoFileName}",
-                                DurationSeconds = model.DurationSeconds
-                            };
-
-                            teacher.AddVideoToModule(module, videoContent);
-                            content = videoContent;
-                            _context.VideoContents.Add(videoContent);
-                            _context.SaveChanges();
+                            Directory.CreateDirectory(videoFolder);
                         }
-                        break;
 
-                    case "Text":
-                        if (model.TextFile != null)
+                        string videoFileName = model.Title.Replace(" ", "") + Path.GetExtension(model.VideoFile.FileName);
+                        string videoPath = Path.Combine(videoFolder, videoFileName);
+
+                        using (var fileStream = new FileStream(videoPath, FileMode.Create))
                         {
-                            string textFolder = Path.Combine(contentFolder, "txt", courseFolder);
-                            if (!Directory.Exists(textFolder))
-                            {
-                                Directory.CreateDirectory(textFolder);
-                            }
-
-                            string textFileName = model.Title.Replace(" ", "") + Path.GetExtension(model.TextFile.FileName);
-                            string textPath = Path.Combine(textFolder, textFileName);
-
-                            using (var fileStream = new FileStream(textPath, FileMode.Create))
-                            {
-                                await model.TextFile.CopyToAsync(fileStream);
-                            }
-
-                            var textContent = new TextContent
-                            {
-                                Title = model.Title,
-                                ShortDescription = model.ShortDescription,
-                                Order = module.Contents.Count + 1,
-                                TextLocation = $"~/contents/txt/{courseFolder}/{textFileName}"
-                            };
-
-                            teacher.AddTextContentToModule(module, textContent);
-                            content = textContent;
-                            _context.TextContents.Add(textContent);
-                            _context.SaveChanges();
+                            await model.VideoFile.CopyToAsync(fileStream);
                         }
-                        break;
 
-                    case "Quiz":
-                        var quizContent = new QuizContent
+                        var videoContent = new VideoContent
                         {
                             Title = model.Title,
                             ShortDescription = model.ShortDescription,
                             Order = module.Contents.Count + 1,
-                            PassingScore = model.PassingScore ?? 70,
-                            MaxAttempts = model.MaxAttempts
+                            VideoLocation = $"~/contents/vid/{courseFolder}/{videoFileName}",
+                            DurationSeconds = model.DurationSeconds
                         };
 
-                        teacher.AddQuizToModule(module, quizContent);
-                        content = quizContent;
-                        _context.Quizzes.Add(quizContent);
-                        await _context.SaveChangesAsync();
-                        // After saving, redirect to create quiz questions
-                        return RedirectToAction("CreateQuizQuestions", new { quizContentId = quizContent.Id });
-                        break;
-                }
+                        teacher.AddVideoToModule(module, videoContent);
+                        content = videoContent;
+                        _context.VideoContents.Add(videoContent);
+                        _context.SaveChanges();
+                    }
+                    break;
 
-                if (content != null)
-                {
+                case "Text":
+                    if (model.TextFile != null)
+                    {
+                        string textFolder = Path.Combine(contentFolder, "txt", courseFolder);
+                        if (!Directory.Exists(textFolder))
+                        {
+                            Directory.CreateDirectory(textFolder);
+                        }
+
+                        string textFileName = model.Title.Replace(" ", "") + Path.GetExtension(model.TextFile.FileName);
+                        string textPath = Path.Combine(textFolder, textFileName);
+
+                        using (var fileStream = new FileStream(textPath, FileMode.Create))
+                        {
+                            await model.TextFile.CopyToAsync(fileStream);
+                        }
+
+                        var textContent = new TextContent
+                        {
+                            Title = model.Title,
+                            ShortDescription = model.ShortDescription,
+                            Order = module.Contents.Count + 1,
+                            TextLocation = $"~/contents/txt/{courseFolder}/{textFileName}"
+                        };
+
+                        teacher.AddTextContentToModule(module, textContent);
+                        content = textContent;
+                        _context.TextContents.Add(textContent);
+                        _context.SaveChanges();
+                    }
+                    break;
+
+                case "Quiz":
+                    var quizContent = new QuizContent
+                    {
+                        Title = model.Title,
+                        ShortDescription = model.ShortDescription,
+                        Order = module.Contents.Count + 1,
+                        PassingScore = model.PassingScore ?? 70,
+                        MaxAttempts = model.MaxAttempts
+                    };
+
+                    teacher.AddQuizToModule(module, quizContent);
+                    content = quizContent;
+                    _context.Quizzes.Add(quizContent);
                     await _context.SaveChangesAsync();
-                    // Redirect back to content creation for the same module
-                    return RedirectToAction("CreateContent", new { moduleId = module.Id });
-                }
+                    // After saving, redirect to create quiz questions
+                    return RedirectToAction("CreateQuizQuestions", new { quizContentId = quizContent.Id });
+                    break;
             }
 
-            // If we got this far, something failed, redisplay form
-            var moduleForRedisplay = await _context.Modules
-                .Include(m => m.Course)
-                .Include(m => m.Contents)
-                .FirstOrDefaultAsync(m => m.Id == model.ModuleId);
-
-            model.ModuleTitle = moduleForRedisplay.Title;
-            model.CourseTitle = moduleForRedisplay.Course.Title;
-            model.ExistingContents = moduleForRedisplay.Contents.OrderBy(c => c.Order).ToList();
-
-            return View(model);
+            if (content != null)
+            {
+                await _context.SaveChangesAsync();
+                // Redirect back to content creation for the same module
+                return RedirectToAction("CreateContent", new { moduleId = module.Id });
+            }
+            return RedirectToAction("CreateContent", new { moduleId = module.Id });
         }
+        
 
         // GET: Course/CreateQuizQuestions
         public async Task<IActionResult> CreateQuizQuestions(int quizContentId)
@@ -934,52 +911,39 @@ namespace EduGate.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateQuizQuestions(QuizQuestionsViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                var quizContent = await _context.Set<QuizContent>()
+            var quizContent = await _context.Set<QuizContent>()
                     .Include(q => q.Module)
                         .ThenInclude(m => m.Course)
                     .FirstOrDefaultAsync(q => q.Id == model.QuizContentId);
 
-                if (quizContent == null)
-                {
-                    return NotFound();
-                }
-
-                // Get current teacher
-                var teacherId = HttpContext.Session.GetInt32("TeacherId");
-                if (quizContent.Module.Course.TeacherId != teacherId)
-                {
-                    return Unauthorized();
-                }
-
-                // Create quiz question
-                var question = new QuizQuestion
-                {
-                    Question = model.Question,
-                    Options = new List<string> { model.Option1, model.Option2, model.Option3, model.Option4 },
-                    CorrectOptionIndex = model.CorrectOptionIndex,
-                    Points = model.Points,
-                    QuizContentId = quizContent.Id
-                };
-
-                quizContent.Questions.Add(question);
-                _context.QuizQuestions.Add(question);
-                await _context.SaveChangesAsync();
-
-                // Redirect back to quiz questions page (add another question)
-                return RedirectToAction("CreateQuizQuestions", new { quizContentId = quizContent.Id });
+            if (quizContent == null)
+            {
+                return NotFound();
             }
 
-            // If we got this far, something failed, redisplay form
-            var quizContentForRedisplay = await _context.Set<QuizContent>()
-                .Include(q => q.Questions)
-                .FirstOrDefaultAsync(q => q.Id == model.QuizContentId);
+            // Get current teacher
+            var teacherId = HttpContext.Session.GetInt32("TeacherId");
+            if (quizContent.Module.Course.TeacherId != teacherId)
+            {
+                return Unauthorized();
+            }
 
-            model.QuizTitle = quizContentForRedisplay.Title;
-            model.ExistingQuestions = quizContentForRedisplay.Questions.ToList();
+            // Create quiz question
+            var question = new QuizQuestion
+            {
+                Question = model.Question,
+                Options = new List<string> { model.Option1, model.Option2, model.Option3, model.Option4 },
+                CorrectOptionIndex = model.CorrectOptionIndex,
+                Points = model.Points,
+                QuizContentId = quizContent.Id
+            };
 
-            return View(model);
+            quizContent.Questions.Add(question);
+            _context.QuizQuestions.Add(question);
+            await _context.SaveChangesAsync();
+
+            // Redirect back to quiz questions page (add another question)
+            return RedirectToAction("CreateQuizQuestions", new { quizContentId = quizContent.Id });
         }
 
         // GET: Course/CompleteQuiz
@@ -999,6 +963,6 @@ namespace EduGate.Controllers
         }
     }
 
-    #endregion Teacher section part
+    #endregion Teacher create section part
 
 }
