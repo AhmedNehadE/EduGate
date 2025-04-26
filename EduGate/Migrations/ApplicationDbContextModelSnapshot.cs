@@ -131,7 +131,7 @@ namespace EduGate.Migrations
                         new
                         {
                             Id = 4,
-                            Category = "AI & Data Science",
+                            Category = "Data Science",
                             Description = "Explore the basics of machine learning including supervised learning, classification, and regression.",
                             ImageUrl = "~/img/machine learning.jpg",
                             TeacherId = 2,
@@ -141,7 +141,7 @@ namespace EduGate.Migrations
                         new
                         {
                             Id = 5,
-                            Category = "AI & Data Science",
+                            Category = "Data Science",
                             Description = "Build deep learning models using TensorFlow, focusing on neural networks and CNNs.",
                             ImageUrl = "~/img/tensorflow.jpg",
                             TeacherId = 3,
@@ -151,7 +151,7 @@ namespace EduGate.Migrations
                         new
                         {
                             Id = 6,
-                            Category = "AI & Data Science",
+                            Category = "Data Science",
                             Description = "Analyze, visualize, and manipulate data using Python's powerful Pandas library.",
                             ImageUrl = "~/img/pandas.png",
                             TeacherId = 3,

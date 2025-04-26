@@ -101,7 +101,7 @@ namespace EduGate.Data
                 {
                     Id = 4,
                     Title = "Machine Learning Basics",
-                    Category = "AI & Data Science",
+                    Category = "Data Science",
                     ImageUrl = "~/img/machine learning.jpg",
                     Views = 1800,
                     Description = "Explore the basics of machine learning including supervised learning, classification, and regression.",
@@ -111,7 +111,7 @@ namespace EduGate.Data
                 {
                     Id = 5,
                     Title = "Deep Learning with TensorFlow",
-                    Category = "AI & Data Science",
+                    Category = "Data Science",
                     ImageUrl = "~/img/tensorflow.jpg",
                     Views = 950,
                     Description = "Build deep learning models using TensorFlow, focusing on neural networks and CNNs.",
@@ -121,7 +121,7 @@ namespace EduGate.Data
                 {
                     Id = 6,
                     Title = "Data Analysis with Pandas",
-                    Category = "AI & Data Science",
+                    Category = "Data Science",
                     ImageUrl = "~/img/pandas.png",
                     Views = 700,
                     Description = "Analyze, visualize, and manipulate data using Python's powerful Pandas library.",

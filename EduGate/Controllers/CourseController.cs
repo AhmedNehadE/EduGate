@@ -593,7 +593,7 @@ namespace EduGate.Controllers
             return View(viewModel);
         }
 
-        #region Teacher create section part
+#region Teacher create section part
         // GET: Course/Create
         public IActionResult Create()
         {
@@ -698,39 +698,39 @@ namespace EduGate.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateModule(ModuleCreateViewModel model)
         {
-                var course = await _context.Courses
-                .Include(c => c.Modules)
-                .FirstOrDefaultAsync(c => c.Id == model.CourseId);
-                if (course == null)
-                {
-                    return NotFound();
-                }
+            var course = await _context.Courses
+            .Include(c => c.Modules)
+            .FirstOrDefaultAsync(c => c.Id == model.CourseId);
+            if (course == null)
+            {
+                return NotFound();
+            }
 
-                // Get current teacher
-                var teacherId = HttpContext.Session.GetInt32("TeacherId");
-                if (course.TeacherId != teacherId)
-                {
-                    return Unauthorized();
-                }
+            // Get current teacher
+            var teacherId = HttpContext.Session.GetInt32("TeacherId");
+            if (course.TeacherId != teacherId)
+            {
+                return Unauthorized();
+            }
 
-                var teacher = await _context.Teachers.FindAsync(teacherId);
+            var teacher = await _context.Teachers.FindAsync(teacherId);
 
-                // Create module
-                var module = new Module
-                {
-                    Title = model.Title,
-                    Description = model.Description,
-                    CourseId = course.Id,
-                    Order = course.Modules.Count + 1 // or use _context.Modules.Count for course
-                };
-                model.ExistingModules.Add(module);
-                course.Modules.Add(module);
-                _context.Modules.Add(module);
+            // Create module
+            var module = new Module
+            {
+                Title = model.Title,
+                Description = model.Description,
+                CourseId = course.Id,
+                Order = course.Modules.Count + 1 // or use _context.Modules.Count for course
+            };
+            model.ExistingModules.Add(module);
+            course.Modules.Add(module);
+            _context.Modules.Add(module);
 
-                await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-                // Redirect to content creation page
-                return RedirectToAction("CreateContent", new { moduleId = module.Id });
+            // Redirect to content creation page
+            return RedirectToAction("CreateContent", new { moduleId = module.Id });
         }
 
         // GET: Course/CreateContent
@@ -880,7 +880,7 @@ namespace EduGate.Controllers
             }
             return RedirectToAction("CreateContent", new { moduleId = module.Id });
         }
-        
+
 
         // GET: Course/CreateQuizQuestions
         public async Task<IActionResult> CreateQuizQuestions(int quizContentId)
@@ -961,8 +961,600 @@ namespace EduGate.Controllers
             // Redirect back to module content page
             return RedirectToAction("CreateContent", new { moduleId = quizContent.ModuleId });
         }
-    }
+    
 
     #endregion Teacher create section part
+
+#region Teacher edit section part
+
+        // Add these actions to your CourseController class within the #region Teacher edit section part
+
+        // GET: Course/Edit/{id}
+        public async Task<IActionResult> Edit(int id)
+            {
+                // Get the course with all related data
+                var course = await _context.Courses
+                    .Include(c => c.Teacher)
+                    .Include(c => c.Modules.OrderBy(m => m.Order))
+                        .ThenInclude(m => m.Contents.OrderBy(c => c.Order))
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (course == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Create view model
+                var viewModel = new CourseEditViewModel
+                {
+                    CourseId = course.Id,
+                    Title = course.Title,
+                    Description = course.Description,
+                    Category = course.Category,
+                    ImageUrl = course.ImageUrl,
+                    Modules = course.Modules.ToList()
+                };
+
+                return View(viewModel);
+            }
+
+            // POST: Course/UpdateCourse
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> UpdateCourse(CourseEditViewModel model)
+            {
+
+                var course = await _context.Courses.FindAsync(model.CourseId);
+                if (course == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Update course properties
+                course.Title = model.Title;
+                course.Description = model.Description;
+                course.Category = model.Category;
+
+                // Handle image upload if a new image is provided
+                if (model.ImageFile != null)
+                {
+                    string courseImagesFolder = Path.Combine(_hostEnvironment.WebRootPath, "img", "courses");
+                    if (!Directory.Exists(courseImagesFolder))
+                    {
+                        Directory.CreateDirectory(courseImagesFolder);
+                    }
+
+                    // Delete old image if exists
+                    if (!string.IsNullOrEmpty(course.ImageUrl) && course.ImageUrl.StartsWith("~/img/courses/"))
+                    {
+                        string oldImagePath = Path.Combine(_hostEnvironment.WebRootPath,
+                            course.ImageUrl.Replace("~/", "").Replace("/", Path.DirectorySeparatorChar.ToString()));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    // Save new image
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.ImageFile.FileName);
+                    string filePath = Path.Combine(courseImagesFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(fileStream);
+                    }
+
+                    course.ImageUrl = "~/img/courses/" + uniqueFileName;
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Course updated successfully.";
+                return RedirectToAction("Edit", new { id = course.Id });
+            }
+
+            // GET: Course/EditModule/{id}
+            public async Task<IActionResult> EditModule(int id)
+            {
+                var module = await _context.Modules
+                    .Include(m => m.Course)
+                    .Include(m => m.Contents.OrderBy(c => c.Order))
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                if (module == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                var viewModel = new ModuleEditViewModel
+                {
+                    ModuleId = module.Id,
+                    Title = module.Title,
+                    Description = module.Description,
+                    CourseId = module.CourseId,
+                    CourseTitle = module.Course.Title,
+                    Contents = module.Contents.ToList()
+                };
+
+                return View(viewModel);
+            }
+
+            // POST: Course/UpdateModule
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> UpdateModule(ModuleEditViewModel model)
+            {
+                if (!ModelState.IsValid)
+                {
+                    return View("EditModule", model);
+                }
+
+                var module = await _context.Modules
+                    .Include(m => m.Course)
+                    .FirstOrDefaultAsync(m => m.Id == model.ModuleId);
+
+                if (module == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Update module properties
+                module.Title = model.Title;
+                module.Description = model.Description;
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Module updated successfully.";
+                return RedirectToAction("EditModule", new { id = module.Id });
+            }
+
+            // POST: Course/DeleteModule
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> DeleteModule(int moduleId, int courseId)
+            {
+                var module = await _context.Modules
+                    .Include(m => m.Course)
+                    .Include(m => m.Contents)
+                    .FirstOrDefaultAsync(m => m.Id == moduleId);
+
+                if (module == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Delete related content files
+                foreach (var content in module.Contents)
+                {
+                    if (content is VideoContent videoContent)
+                    {
+                        DeleteContentFile(videoContent.VideoLocation);
+                    }
+                    else if (content is TextContent textContent)
+                    {
+                        DeleteContentFile(textContent.TextLocation);
+                    }
+                    else if (content is QuizContent quizContent)
+                    {
+                        // Delete quiz questions
+                        var questions = await _context.Set<QuizQuestion>()
+                            .Where(q => q.QuizContentId == quizContent.Id)
+                            .ToListAsync();
+                        _context.QuizQuestions.RemoveRange(questions);
+                    }
+
+                    // Remove all related content progresses
+                    var contentProgresses = await _context.Set<ContentProgress>()
+                        .Where(cp => cp.ContentId == content.Id)
+                        .ToListAsync();
+                    _context.Set<ContentProgress>().RemoveRange(contentProgresses);
+                }
+
+                // Remove module from database
+                _context.Modules.Remove(module);
+
+                // Reorder remaining modules
+                var remainingModules = await _context.Modules
+                    .Where(m => m.CourseId == courseId && m.Id != moduleId)
+                    .OrderBy(m => m.Order)
+                    .ToListAsync();
+
+                for (int i = 0; i < remainingModules.Count; i++)
+                {
+                    remainingModules[i].Order = i + 1;
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Module deleted successfully.";
+                return RedirectToAction("Edit", new { id = courseId });
+            }
+
+            // POST: Course/DeleteContent
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> DeleteContent(int contentId, int moduleId)
+            {
+                var content = await _context.Set<ModuleContent>()
+                    .Include(c => c.Module)
+                        .ThenInclude(m => m.Course)
+                    .FirstOrDefaultAsync(c => c.Id == contentId);
+
+                if (content == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (content.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Delete content file if exists
+                if (content is VideoContent videoContent)
+                {
+                    DeleteContentFile(videoContent.VideoLocation);
+                }
+                else if (content is TextContent textContent)
+                {
+                    DeleteContentFile(textContent.TextLocation);
+                }
+                else if (content is QuizContent quizContent)
+                {
+                    // Delete quiz questions
+                    var questions = await _context.Set<QuizQuestion>()
+                        .Where(q => q.QuizContentId == quizContent.Id)
+                        .ToListAsync();
+                    _context.QuizQuestions.RemoveRange(questions);
+                }
+
+                // Remove all related content progresses
+                var contentProgresses = await _context.Set<ContentProgress>()
+                    .Where(cp => cp.ContentId == content.Id)
+                    .ToListAsync();
+                _context.Set<ContentProgress>().RemoveRange(contentProgresses);
+
+                // Remove content from database
+                _context.Set<ModuleContent>().Remove(content);
+
+                // Reorder remaining contents
+                var remainingContents = await _context.Set<ModuleContent>()
+                    .Where(c => c.ModuleId == moduleId && c.Id != contentId)
+                    .OrderBy(c => c.Order)
+                    .ToListAsync();
+
+                for (int i = 0; i < remainingContents.Count; i++)
+                {
+                    remainingContents[i].Order = i + 1;
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Content deleted successfully.";
+                return RedirectToAction("EditModule", new { id = moduleId });
+            }
+
+            // Helper method to delete content files
+            private void DeleteContentFile(string filePath)
+            {
+                if (!string.IsNullOrEmpty(filePath) && filePath.StartsWith("~/"))
+                {
+                    string physicalPath = Path.Combine(_hostEnvironment.WebRootPath,
+                        filePath.Replace("~/", "").Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        System.IO.File.Delete(physicalPath);
+                    }
+                }
+            }
+
+            // POST: Course/ReorderModules
+            [HttpPost]
+            public async Task<IActionResult> ReorderModules([FromBody] ReorderModulesViewModel model)
+            {
+                if (model == null || model.ModuleIds == null || !model.ModuleIds.Any())
+                {
+                    return BadRequest();
+                }
+
+                // Get first module to check course ownership
+                var firstModule = await _context.Modules
+                    .Include(m => m.Course)
+                    .FirstOrDefaultAsync(m => m.Id == model.ModuleIds.First());
+
+                if (firstModule == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (firstModule.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Update order of modules
+                for (int i = 0; i < model.ModuleIds.Count; i++)
+                {
+                    var module = await _context.Modules.FindAsync(model.ModuleIds[i]);
+                    if (module != null)
+                    {
+                        module.Order = i + 1;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+
+            // POST: Course/ReorderContents
+            [HttpPost]
+            public async Task<IActionResult> ReorderContents([FromBody] ReorderContentsViewModel model)
+            {
+                if (model == null || model.ContentIds == null || !model.ContentIds.Any())
+                {
+                    return BadRequest();
+                }
+
+                // Get first content to check module and course ownership
+                var firstContent = await _context.Set<ModuleContent>()
+                    .Include(c => c.Module)
+                        .ThenInclude(m => m.Course)
+                    .FirstOrDefaultAsync(c => c.Id == model.ContentIds.First());
+
+                if (firstContent == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (firstContent.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Update order of contents
+                for (int i = 0; i < model.ContentIds.Count; i++)
+                {
+                    var content = await _context.Set<ModuleContent>().FindAsync(model.ContentIds[i]);
+                    if (content != null)
+                    {
+                        content.Order = i + 1;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+
+            // POST: Course/EditQuiz/{id}
+            public async Task<IActionResult> EditQuiz(int id)
+            {
+                var quizContent = await _context.Set<QuizContent>()
+                    .Include(q => q.Module)
+                        .ThenInclude(m => m.Course)
+                    .Include(q => q.Questions)
+                    .FirstOrDefaultAsync(q => q.Id == id);
+
+                if (quizContent == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (quizContent.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                var viewModel = new QuizEditViewModel
+                {
+                    QuizContentId = quizContent.Id,
+                    Title = quizContent.Title,
+                    ShortDescription = quizContent.ShortDescription,
+                    PassingScore = quizContent.PassingScore,
+                    MaxAttempts = quizContent.MaxAttempts,
+                    ModuleId = quizContent.ModuleId,
+                    Questions = quizContent.Questions.ToList()
+                };
+
+                return View(viewModel);
+            }
+
+            // POST: Course/UpdateQuiz
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> UpdateQuiz(QuizEditViewModel model)
+            {
+                if (!ModelState.IsValid)
+                {
+                    return View("EditQuiz", model);
+                }
+
+                var quizContent = await _context.Set<QuizContent>()
+                    .Include(q => q.Module)
+                        .ThenInclude(m => m.Course)
+                    .FirstOrDefaultAsync(q => q.Id == model.QuizContentId);
+
+                if (quizContent == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (quizContent.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Update quiz properties
+                quizContent.Title = model.Title;
+                quizContent.ShortDescription = model.ShortDescription;
+                quizContent.PassingScore = model.PassingScore;
+                quizContent.MaxAttempts = model.MaxAttempts;
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Quiz updated successfully.";
+                return RedirectToAction("EditQuiz", new { id = quizContent.Id });
+            }
+
+            // POST: Course/DeleteQuestion
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> DeleteQuestion(int questionId, int quizContentId)
+            {
+                var question = await _context.Set<QuizQuestion>()
+                    .Include(q => q.QuizContent)
+                        .ThenInclude(qc => qc.Module)
+                            .ThenInclude(m => m.Course)
+                    .FirstOrDefaultAsync(q => q.Id == questionId);
+
+                if (question == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (question.QuizContent.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Remove question from database
+                _context.QuizQuestions.Remove(question);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Question deleted successfully.";
+                return RedirectToAction("EditQuiz", new { id = quizContentId });
+            }
+
+            // POST: Course/AddQuizQuestion
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> AddQuizQuestion(QuizEditViewModel model)
+            {
+                if (string.IsNullOrEmpty(model.NewQuestion.Question) ||
+                    string.IsNullOrEmpty(model.NewQuestion.Option1) ||
+                    string.IsNullOrEmpty(model.NewQuestion.Option2))
+                {
+                    TempData["ErrorMessage"] = "Question and at least two options are required.";
+                    return RedirectToAction("EditQuiz", new { id = model.QuizContentId });
+                }
+
+                var quizContent = await _context.Set<QuizContent>()
+                    .Include(q => q.Module)
+                        .ThenInclude(m => m.Course)
+                    .FirstOrDefaultAsync(q => q.Id == model.QuizContentId);
+
+                if (quizContent == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (quizContent.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Create new question
+                var newQuestion = new QuizQuestion
+                {
+                    Question = model.NewQuestion.Question,
+                    Options = new List<string> {
+                model.NewQuestion.Option1,
+                model.NewQuestion.Option2,
+                model.NewQuestion.Option3,
+                model.NewQuestion.Option4
+            },
+                    CorrectOptionIndex = model.NewQuestion.CorrectOptionIndex,
+                    Points = model.NewQuestion.Points > 0 ? model.NewQuestion.Points : 1,
+                    QuizContentId = quizContent.Id
+                };
+
+                _context.QuizQuestions.Add(newQuestion);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Question added successfully.";
+                return RedirectToAction("EditQuiz", new { id = model.QuizContentId });
+            }
+
+            // POST: Course/EditQuestion
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> EditQuestion(QuizQuestionEditViewModel model)
+            {
+                var question = await _context.Set<QuizQuestion>()
+                    .Include(q => q.QuizContent)
+                        .ThenInclude(qc => qc.Module)
+                            .ThenInclude(m => m.Course)
+                    .FirstOrDefaultAsync(q => q.Id == model.QuestionId);
+
+                if (question == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if the current teacher is the owner of the course
+                var teacherId = HttpContext.Session.GetInt32("TeacherId");
+                if (question.QuizContent.Module.Course.TeacherId != teacherId)
+                {
+                    return Unauthorized();
+                }
+
+                // Update question
+                question.Question = model.Question;
+                question.Options = new List<string> { model.Option1, model.Option2, model.Option3, model.Option4 };
+                question.CorrectOptionIndex = model.CorrectOptionIndex;
+                question.Points = model.Points;
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Question updated successfully.";
+                return RedirectToAction("EditQuiz", new { id = question.QuizContentId });
+            }
+
+#endregion Teacher edit section part 
+
+
+    }
 
 }

@@ -78,10 +78,14 @@
 
                         <!-- Right-side nav buttons -->
                         <div class="navbar-nav ms-auto d-flex align-items-center gap-2">
+                            @if(!(isLoggedIn && userType == "Teacher"))
+                            {
                             <!--Become a teacher button-->
                             <a class="btn me-2" style="background-color: #023047; color: #FFB703;" asp-area="" asp-controller="Account" asp-action="RegisterTeacher">
                                 Become a Teacher
                             </a>
+                            }
+                            
 
                             @if (isLoggedIn)
                             {
