@@ -42,7 +42,13 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
-
+    @if (TempData["UnenrollSuccess"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["UnenrollSuccess"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
     <div class="row">
         <!-- Course Main Content -->
         <div class="col-lg-8">
@@ -278,10 +284,15 @@
                             <span>Yes</span>
                         </li>
                     </ul>
+                    <!-- the buttons on the card -->
                     <div class="d-grid gap-2 mt-4">
                         @if (Model.IsEnrolled)
                         {
                             <a href="@Url.Action("Learn", "Course", new { id = Model.Course.Id })" class="btn @buttonClass btn-lg">@buttonText</a>
+
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unenrollModal">
+                                Unenroll from Course
+                            </button>
                         }
                         else if (Context.Session.GetInt32("StudentId").HasValue)
                         {
@@ -294,10 +305,32 @@
                         {
                             <a href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("Details", "Course", new { id = Model.Course.Id }) })" class="btn @buttonClass btn-lg">@buttonText</a>
                         }
-                        <button class="btn btn-outline-secondary">Add to Wishlist</button>
+                    </div>
+
+                    <!-- Add modal confirmation dialog -->
+                    <div class="modal fade" id="unenrollModal" tabindex="-1" aria-labelledby="unenrollModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="unenrollModalLabel">Confirm Unenrollment</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to unenroll from this course? Your progress will be saved, but you will need to enroll again to continue learning.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form asp-action="Unenroll" asp-controller="Course" method="post">
+                                        <input type="hidden" name="id" value="@Model.Course.Id" />
+                                        <button type="submit" class="btn btn-danger">Confirm Unenrollment</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
 
             <!-- Instructor Info -->
             <div class="card mb-4 shadow-sm">

@@ -194,6 +194,37 @@ namespace EduGate.Controllers
             return RedirectToAction("Learn", "Course", new { id = id });
         }
 
+        [HttpPost]
+        public IActionResult Unenroll(int id)
+        {
+            // Check if user is logged in
+            var studentId = _httpContextAccessor.HttpContext.Session.GetInt32("StudentId");
+            if (studentId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Find the enrollment
+            var enrollment = _context.StudentCourses
+                .FirstOrDefault(sc => sc.StudentId == studentId && sc.CourseId == id);
+
+            if (enrollment == null)
+            {
+                // Not enrolled, redirect to course details
+                return RedirectToAction("Details", new { id = id });
+            }
+
+            // Remove the enrollment
+            _context.StudentCourses.Remove(enrollment);
+            _context.SaveChanges();
+
+            // Add a success message
+            TempData["UnenrollSuccess"] = "You have successfully unenrolled from this course.";
+
+            // Redirect back to course details
+            return RedirectToAction("Details", new { id = id });
+        }
+
 
         public IActionResult Learn(int id, int? moduleId = null, int? contentId = null)
         {
@@ -514,7 +545,7 @@ namespace EduGate.Controllers
                     description = c.Description,
                     instructorName = c.Teacher.Name, // Assuming Teacher has FirstName and LastName
                     category = c.Category,
-                    thumbnailUrl = c.ImageUrl.Replace("~/", ""), // Using ImageUrl from your model
+                    thumbnailUrl = Url.Content(c.ImageUrl),
                     // Calculate relevance score: number of matching terms in title and description
                     relevanceScore = searchTerms.Count(term =>
                         c.Title.ToLower().Contains(term)) * 3 + // Title matches weighted more
