@@ -29,11 +29,6 @@ namespace EduGate.Models
             return $"Teacher: {Name}, Email: {Email}, Uploaded Courses: {UploadedCourses.Count}";
         }
 
-        public void UploadCourse(Course course)
-        {
-            UploadedCourses.Add(course);
-        }
-
         // Updated to work with modules and content structure
         public void AddQuizToModule(Module module, QuizContent quiz)
         {
@@ -59,33 +54,5 @@ namespace EduGate.Models
             }
         }
 
-        public Module CreateModule(Course course, string title, string description = null)
-        {
-            if (UploadedCourses.Contains(course))
-            {
-                var module = new Module
-                {
-                    Title = title,
-                    Description = description,
-                    Order = course.Modules.Count + 1,
-                    CourseId = course.Id,
-                    Course = course
-                };
-
-                course.Modules.Add(module);
-                return module;
-            }
-            return null;
-        }
-
-        public int GetTotalViews(Course course)
-        {
-            return course.Views;
-        }
-
-        public int GetTotalContentCount(Course course)
-        {
-            return course.Modules.Sum(m => m.Contents.Count);
-        }
     }
 }

@@ -1,0 +1,12 @@
+<h2>Working with Classes and Objects in Practice</h2>
+<p>Now that you’re familiar with the core concepts of OOP, it’s time to put them into action. In this part of the course, we’ll guide you through writing your first classes and creating objects from them.</p>
+
+<p>You’ll learn how to:</p>
+<ul>
+  <li>Define a class with attributes and behaviors (methods).</li>
+  <li>Use constructors to initialize objects with specific data.</li>
+  <li>Apply access modifiers to protect data within the class.</li>
+  <li>Create multiple objects and understand how each holds its own state.</li>
+</ul>
+
+<p>Through interactive examples and exercises, you’ll gain hands-on experience that reinforces the theory and helps you build confidence in applying OOP to real projects.</p>

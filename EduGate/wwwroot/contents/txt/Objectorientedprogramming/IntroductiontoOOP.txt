@@ -1,0 +1,12 @@
+<h2>Introduction to Object-Oriented Programming Concepts</h2>
+<p>Welcome to the first step in your OOP journey. In this part of the course, we will break down the fundamental ideas behind Object-Oriented Programming. You’ll learn how OOP models real-world entities using objects and how these objects interact through well-defined interfaces.</p>
+
+<p>We’ll cover the four core concepts that form the foundation of OOP:</p>
+<ul>
+  <li><strong>Encapsulation:</strong> Hiding internal details and exposing only what is necessary.</li>
+  <li><strong>Inheritance:</strong> Creating new classes based on existing ones to promote code reuse.</li>
+  <li><strong>Polymorphism:</strong> Writing code that can work with objects of different types through a common interface.</li>
+  <li><strong>Abstraction:</strong> Focusing on what an object does instead of how it does it.</li>
+</ul>
+
+<p>By the end of this section, you’ll understand how these principles help write organized, scalable, and flexible code that mirrors real-life systems.</p>
