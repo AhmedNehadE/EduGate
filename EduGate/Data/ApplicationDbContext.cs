@@ -8,6 +8,7 @@ namespace EduGate.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
+             
         }
 
         public DbSet<Student> Students { get; set; }
@@ -27,17 +28,16 @@ namespace EduGate.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure entity inheritance - use Table-Per-Hierarchy
             modelBuilder.Entity<ModuleContent>().ToTable("ModuleContents");
 
-            // Configure the discriminator
+
             modelBuilder.Entity<ModuleContent>()
                 .HasDiscriminator(c => c.ContentType)
                 .HasValue<TextContent>("Text")
                 .HasValue<VideoContent>("Video")
                 .HasValue<QuizContent>("Quiz");
 
-            // Seed Teachers
+
             modelBuilder.Entity<Teacher>().HasData(
                 new Teacher
                 {
@@ -62,9 +62,9 @@ namespace EduGate.Data
                 }
             );
 
-            // Add seed data for Courses
+
             modelBuilder.Entity<Course>().HasData(
-                // Programming Category
+
                 new Course
                 {
                     Id = 1,
@@ -96,7 +96,7 @@ namespace EduGate.Data
                     TeacherId = 2
                 },
 
-                // AI & Data Science Category
+
                 new Course
                 {
                     Id = 4,
@@ -128,7 +128,7 @@ namespace EduGate.Data
                     TeacherId = 3
                 },
 
-                // Web Development Category
+
                 new Course
                 {
                     Id = 7,
@@ -161,7 +161,7 @@ namespace EduGate.Data
                 }
             );
 
-            // Seed CourseReviews
+
             modelBuilder.Entity<CourseReview>().HasData(
                 new CourseReview
                 {
@@ -201,7 +201,6 @@ namespace EduGate.Data
                 }
             );
 
-            // Seed Students
             modelBuilder.Entity<Student>().HasData(
                 new Student
                 {
@@ -219,7 +218,6 @@ namespace EduGate.Data
                 }
             );
 
-            // Seed Modules
             modelBuilder.Entity<Module>().HasData(
                 new Module
                 {
@@ -263,8 +261,6 @@ namespace EduGate.Data
                 }
             );
 
-
-            // Seed VideoContent 
             modelBuilder.Entity<VideoContent>().HasData(
                 new VideoContent
                 {
@@ -298,7 +294,6 @@ namespace EduGate.Data
                 }
             );
 
-            // Seed TextContent 
             modelBuilder.Entity<TextContent>().HasData(
                 new TextContent
                 {
@@ -333,7 +328,6 @@ namespace EduGate.Data
             );
 
 
-            // Seed QuizContent
             modelBuilder.Entity<QuizContent>().HasData(
                 new QuizContent
                 {
@@ -389,7 +383,6 @@ namespace EduGate.Data
 
 
 
-            // Seed QuizQuestions with updated foreign key
             modelBuilder.Entity<QuizQuestion>().HasData(
                 new QuizQuestion
                 {
@@ -397,7 +390,7 @@ namespace EduGate.Data
                     Question = "What is a variable?",
                     Options = new List<string> { "A container for data", "A type of loop", "A function", "None of the above" },
                     CorrectOptionIndex = 0,
-                    QuizContentId = 7  // Link to QuizContent instead of Quiz
+                    QuizContentId = 7 
                 },
                 new QuizQuestion
                 {
@@ -405,7 +398,7 @@ namespace EduGate.Data
                     Question = "What is overfitting in machine learning?",
                     Options = new List<string> { "Model too simple", "Model too complex", "Model has low accuracy", "Model has high bias" },
                     CorrectOptionIndex = 1,
-                    QuizContentId = 8  // Link to QuizContent instead of Quiz
+                    QuizContentId = 8  
                 },
                 new QuizQuestion
                 {
@@ -481,50 +474,43 @@ namespace EduGate.Data
                 }
             );
 
-            // Course - Teacher (many-to-one)
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Teacher)
                 .WithMany(t => t.UploadedCourses)
                 .HasForeignKey(c => c.TeacherId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Module - Course (many-to-one)
             modelBuilder.Entity<Module>()
                 .HasOne(m => m.Course)
                 .WithMany(c => c.Modules)
                 .HasForeignKey(m => m.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ModuleContent - Module (many-to-one)
             modelBuilder.Entity<ModuleContent>()
                 .HasOne(mc => mc.Module)
                 .WithMany(m => m.Contents)
                 .HasForeignKey(mc => mc.ModuleId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // QuizQuestion - QuizContent (many-to-one)
             modelBuilder.Entity<QuizQuestion>()
                 .HasOne(q => q.QuizContent)
                 .WithMany(qc => qc.Questions)
                 .HasForeignKey(q => q.QuizContentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // CourseReview - Course (many-to-one)
             modelBuilder.Entity<CourseReview>()
                 .HasOne(cr => cr.Course)
                 .WithMany(c => c.Reviews)
                 .HasForeignKey(cr => cr.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // CourseReview - Student (many-to-one)
             modelBuilder.Entity<CourseReview>()
                 .HasOne(cr => cr.Student)
                 .WithMany()
                 .HasForeignKey(cr => cr.StudentId)
-                .OnDelete(DeleteBehavior.Restrict); // Use Restrict instead of Cascade to avoid circular cascade path
+                .OnDelete(DeleteBehavior.Restrict); 
 
 
-            // StudentCourse mapping (instead of direct many-to-many)
             modelBuilder.Entity<StudentCourse>()
                 .HasKey(sc => sc.Id);
 
@@ -538,7 +524,6 @@ namespace EduGate.Data
                 .WithMany()
                 .HasForeignKey(sc => sc.CourseId);
 
-            // ContentProgress mapping
             modelBuilder.Entity<ContentProgress>()
                 .HasKey(cp => cp.Id);
 
@@ -552,13 +537,11 @@ namespace EduGate.Data
                 .WithMany()
                 .HasForeignKey(cp => cp.ContentId);
 
-            // Course description length validation
             modelBuilder.Entity<Course>()
                 .Property(c => c.Description)
-                .HasMaxLength(1000)  // Updated to 1000 from 200 to allow more detailed descriptions
+                .HasMaxLength(1000)  
                 .IsRequired();
 
-            // QuizQuestion options (convert list to JSON or comma-separated string)
             modelBuilder.Entity<QuizQuestion>()
                 .Property(q => q.Options)
                 .HasConversion(

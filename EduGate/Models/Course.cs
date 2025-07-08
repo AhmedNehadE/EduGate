@@ -97,7 +97,6 @@ namespace EduGate.Models
         public List<ModuleContent> Contents { get; set; } = new List<ModuleContent>();
     }
 
-    // Abstract base class for all module content types
     public abstract class ModuleContent
     {
         [Key]
@@ -196,7 +195,6 @@ namespace EduGate.Models
         public QuizContent QuizContent { get; set; }
     }
 
-    // Student progress tracking classes
     [Table("ContentProgresses")]
     public class ContentProgress
     {

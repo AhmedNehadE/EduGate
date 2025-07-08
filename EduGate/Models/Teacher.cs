@@ -29,7 +29,7 @@ namespace EduGate.Models
             return $"Teacher: {Name}, Email: {Email}, Uploaded Courses: {UploadedCourses.Count}";
         }
 
-        // Updated to work with modules and content structure
+
         public void AddQuizToModule(Module module, QuizContent quiz)
         {
             if (module != null && UploadedCourses.Any(c => c.Modules.Contains(module)))

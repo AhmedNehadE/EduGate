@@ -18,7 +18,7 @@ public class AccountController : Controller
 
 
 
-    // Improved GetLoggedInUser method with all necessary includes for Dashboard
+
     private IAccount GetLoggedInUser()
     {
         string userType = HttpContext.Session.GetString("UserType");
@@ -68,15 +68,15 @@ public class AccountController : Controller
 
         if (student != null)
         {
-            // Store student ID in session
+
             HttpContext.Session.SetInt32("StudentId", student.Id);
             HttpContext.Session.SetString("UserType", "Student");
             HttpContext.Session.SetString("UserName", student.Name);
 
-            // Still keep TempData for backward compatibility
+
             TempData["UserName"] = student.Name;
 
-            // Redirect to returnUrl if provided, otherwise go to home
+
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             else
@@ -84,12 +84,12 @@ public class AccountController : Controller
         }
         else if (teacher != null)
         {
-            // Store teacher ID in session
+
             HttpContext.Session.SetInt32("TeacherId", teacher.Id);
             HttpContext.Session.SetString("UserType", "Teacher");
             HttpContext.Session.SetString("UserName", teacher.Name);
 
-            // Still keep TempData for backward compatibility
+
             TempData["UserName"] = teacher.Name;
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -102,14 +102,14 @@ public class AccountController : Controller
         ViewBag.ReturnUrl = returnUrl;
         return View();
     }
-    // Add a logout action
+
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();
         return RedirectToAction("Index", "Home");
     }
 
-    // Update your Register methods to also set session
+
     [HttpPost]
     public IActionResult Register(Student student)
     {

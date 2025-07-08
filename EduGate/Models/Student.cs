@@ -22,10 +22,10 @@ namespace EduGate.Models
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 letters")]
         public string Password { get; set; }
 
-        // Many-to-many relationship with courses
+
         public List<StudentCourse> EnrolledCourses { get; set; } = new List<StudentCourse>();
 
-        // Track progress on individual content items
+
         public List<ContentProgress> ContentProgresses { get; set; } = new List<ContentProgress>();
 
         public string GetAccountInfo()
